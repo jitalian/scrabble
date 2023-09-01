@@ -3,7 +3,8 @@ import pygame
 
 
 class Rack:
-    def __init__(self, game_tiles, screen, board):
+    def __init__(self, game_tiles, screen, board, words):
+        self.words = words
         self.screen = screen
         self.game_tiles = game_tiles
         self.board = board
@@ -45,20 +46,34 @@ class Rack:
         for tile in self.tiles:
             self.game_tiles.tiles.append(tile)
 
-        self.tiles = [self.game_tiles.get_random_tile() for i in range(7)]
+        self.tiles = [self.game_tiles.get_random_tile() for _ in range(7)]
         self.generate_tile_rects(reset=True)
 
-    def submit_move(self):
-        # TODO Check for valid move
-
+    def get_move_indices(self):
+        tiles_moved = []
         for i in range(len(self.tiles)):
             for j in range(SQUARES):
                 for k in range(SQUARES):
                     if self.board.board[j][k].collidepoint(self.tile_rects[i].center):
-                        self.board.current_board[j][k] = self.tiles[i]
-                        new_tile = self.game_tiles.get_random_tile()
-                        if new_tile is not None:
-                            self.tiles[i] = new_tile
+                        tiles_moved.append((j, k, i, self.tiles[i]))
+        return tiles_moved
+
+    def submit_move(self):
+
+        move_indices = self.get_move_indices()
+
+        valid_move = self.board.check_valid_placement(move_indices)
+
+        if not valid_move:
+            self.generate_tile_rects(reset=True)
+            return False
+
+        for i in range(len(move_indices)):
+            row, col, index = move_indices[i][0], move_indices[i][1], move_indices[i][2]
+            self.board.current_board[row][col] = self.tiles[index]
+            new_tile = self.game_tiles.get_random_tile()
+            if new_tile is not None:
+                self.tiles[index] = new_tile
 
         self.generate_tile_rects(reset=True)
-
+        return True

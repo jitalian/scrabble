@@ -4,14 +4,17 @@ from bag import TilesBag
 from board import GameBoard
 from rack import Rack
 import time
+from words import Trie
 
 pygame.init()
 pygame.display.set_caption("Justin's Scrabble")
 
+word_dictionary = Trie("word_list.txt")
 game_tiles = TilesBag()
 screen = pygame.display.set_mode((WINDOW_WIDTH, BOARD_WIDTH))
-board = GameBoard(screen, game_tiles)
-player_tiles = Rack(game_tiles, screen, board)
+board = GameBoard(screen, game_tiles, word_dictionary)
+player_tiles = Rack(game_tiles, screen, board, word_dictionary)
+
 
 player_score = 0
 cpu_score = 0
@@ -22,7 +25,7 @@ player_move = True
 
 
 def cpu_move():
-    time.sleep(5)
+    pass
 
 
 while running:
@@ -43,8 +46,8 @@ while running:
                     player_tiles.generate_tile_rects(reset=True)
 
                 if board.submit_rect.collidepoint(event.pos):
-                    player_tiles.submit_move()
-                    player_move *= -1
+                    if player_tiles.submit_move():
+                        player_move *= -1
 
                 if board.pass_turn_rect.collidepoint(event.pos):
                     pass
@@ -65,7 +68,7 @@ while running:
 
     board.draw_board()
     board.draw_rects()
-    board.print_text(player_score, cpu_score, game_tiles)
+    board.print_text(game_tiles)
     player_tiles.draw_rack()
 
     pygame.display.update()
