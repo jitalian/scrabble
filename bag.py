@@ -12,6 +12,9 @@ class TilesBag:
                        "O": 1, "P": 3, "Q": 10, "R": 1, "S": 1, "T": 1, "U": 1,
                        "V": 4, "W": 4, "X": 8, "Y": 4, "Z": 10, "*": 0}
 
+        # Short game for testing
+        # self.tiles = ["A"] * 2 + ["B"] * 2 + ["D"] * 2 + ["L"] * 2 + ["N"] * 2 + ["S"] * 2 + ["*"] * 2
+
     def get_random_tile(self):
         if len(self.tiles) == 0:
             return None

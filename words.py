@@ -21,9 +21,10 @@ class Trie:
     def find_word(self, word):
         current_node = self.root
         for letter in word:
-            if letter not in current_node.children:
+            # Will use lower case letters to signify a wild card letter and convert to upper during lookup
+            if letter.upper() not in current_node.children:
                 return False
-            current_node = current_node.children[letter]
+            current_node = current_node.children[letter.upper()]
         return current_node.complete_word
 
     def load_word_list(self):
@@ -32,4 +33,22 @@ class Trie:
                 word = line.strip()[1:-1].upper()
                 self.insert_word(word)
 
+    def find_prefix(self, prefix):
+        current_node = self.root
+        for letter in prefix:
+            if letter not in current_node.children:
+                return False
+            current_node = current_node.children[letter]
+        return True
 
+
+# Testing code
+def main():
+    test_trie = Trie("word_list.txt")
+    print(test_trie.find_word("hello"))
+    print(test_trie.find_word("HELLOZ"))
+    print(test_trie.find_prefix("ZYZ"))
+
+
+if __name__ == "__main__":
+    main()

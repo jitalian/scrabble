@@ -15,13 +15,13 @@ screen = pygame.display.set_mode((WINDOW_WIDTH, BOARD_WIDTH))
 board = GameBoard(screen, game_tiles, word_dictionary)
 player_tiles = Rack(game_tiles, screen, board, word_dictionary)
 
-
 player_score = 0
 cpu_score = 0
 
 running = True
 active_rect = None
 player_move = True
+blank_tile = False
 
 
 def cpu_move():
@@ -75,6 +75,5 @@ while running:
     if player_move == -1:
         cpu_move()
         player_move *= -1
-
 
 pygame.quit()

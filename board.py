@@ -1,6 +1,8 @@
 from constants import BOARD_WIDTH, WINDOW_WIDTH, SQUARES, PADDING, FONT_SIZE, GREY, BLACK, RED, DARK_BLUE, BLUE, PINK, LIGHT_BROWN
 import pygame
 from rack import Rack
+import numpy
+import string
 
 
 class GameBoard:
@@ -19,17 +21,13 @@ class GameBoard:
                                     (10, 4), (10, 10), (11, 3), (11, 11), (12, 2), (12, 12), (13, 1), (13, 13)}
         self.start = (7, 7)
 
-        self.allowed_tiles = [["*" for _ in range(SQUARES)] for _ in range(SQUARES)]
+        self.active_tiles = [[False for _ in range(SQUARES)] for _ in range(SQUARES)]
+        self.active_tiles[7][7] = True
 
-        self.current_board = [["_" for _ in range(SQUARES)] for _ in range(SQUARES)]
+        self.current_board = numpy.array([["_" for _ in range(SQUARES)] for _ in range(SQUARES)])
         self.board = []
-        for i in range(SQUARES):
-            row = []
-            for j in range(SQUARES):
-                letter_rect = pygame.Rect(j * BOARD_WIDTH / SQUARES + PADDING, i * BOARD_WIDTH / SQUARES + PADDING, BOARD_WIDTH / SQUARES - PADDING, BOARD_WIDTH / SQUARES - PADDING)
-                row.append(letter_rect)
-            self.board.append(row)
-
+        self.blank_tile_prompt_rects = []
+        self.create_tile_rects()
         self.tile_font = pygame.font.Font(None, FONT_SIZE)
         self.score_font = pygame.font.Font(None, int(FONT_SIZE / 2))
         self.player_score_rect = pygame.Rect(BOARD_WIDTH + 25, 25, (1 / 6) * WINDOW_WIDTH - 30, BOARD_WIDTH / SQUARES)
@@ -43,6 +41,26 @@ class GameBoard:
 
         self.player_score = 0
         self.cpu_score = 0
+
+    def create_tile_rects(self):
+
+        for i in range(SQUARES):
+            row = []
+            for j in range(SQUARES):
+                letter_rect = pygame.Rect(j * BOARD_WIDTH / SQUARES + PADDING, i * BOARD_WIDTH / SQUARES + PADDING, BOARD_WIDTH / SQUARES - PADDING, BOARD_WIDTH / SQUARES - PADDING)
+                row.append(letter_rect)
+            self.board.append(row)
+
+        index = 0
+        for i in range(6):
+            row = []
+            for j in range(5):
+                blank_tile_rect = pygame.Rect((7/24) * WINDOW_WIDTH + PADDING + j * (1/12) * WINDOW_WIDTH, 0.125 * WINDOW_WIDTH + PADDING + i * (1/12) * WINDOW_WIDTH, (1/12) * WINDOW_WIDTH - PADDING, (1/12) * WINDOW_WIDTH - PADDING)
+                row.append((blank_tile_rect, string.ascii_lowercase[index]))
+                index += 1
+                if index == 26:
+                    break
+            self.blank_tile_prompt_rects.append(row)
 
     def draw_board(self):
         for i in range(SQUARES):
@@ -77,6 +95,15 @@ class GameBoard:
                         self.screen.blit(text, text_rect)
                     else:
                         pygame.draw.rect(self.screen, LIGHT_BROWN, self.board[i][j])
+
+    def draw_blank_tile_rects(self):
+        index = 0
+        for i in range(6):
+            for j in range(5):
+                pygame.draw.rect(self.screen, GREY, self.blank_tile_prompt_rects[i][j][0])
+                index += 1
+                if index == 26:
+                    return
 
     def draw_rects(self):
         pygame.draw.rect(self.screen, GREY, self.player_score_rect)
@@ -124,14 +151,104 @@ class GameBoard:
     def generate_word_lanes(self):
         pass
 
+    @staticmethod
+    def read_sub_word(row, col, current_board, letter):
+
+        sub_word = letter
+        row_below = row + 1
+
+        while row > 0 and current_board[row-1][col] != "_":
+            sub_word = (current_board[row-1][col] + sub_word)
+            row -= 1
+
+        while row_below < SQUARES and current_board[row_below][col] != "_":
+            sub_word += current_board[row_below][col]
+            row_below += 1
+
+        if len(sub_word) > 1:
+            return sub_word
+
+    def read_word(self, tiles_moved, horizontal):
+
+        if horizontal:
+            current_board = self.current_board
+
+        else:
+            current_board = self.current_board.T
+            for tile in tiles_moved:
+                tile[0], tile[1] = tile[1], tile[0]
+
+        tiles_moved.sort(key=lambda item: item[1])
+        word = ""
+        current_index = 0
+        row, col = tiles_moved[0][0], tiles_moved[0][1]
+        start_col = col - 1
+
+        while start_col >= 0 and current_board[row][start_col] != "_":
+            word = (current_board[row][start_col] + word)
+            start_col -= 1
+
+        while col < SQUARES:
+            if current_index < len(tiles_moved) and tiles_moved[current_index][1] == col:
+
+                sub_word = self.read_sub_word(row, col, current_board, tiles_moved[current_index][3])
+
+                if sub_word is not None:
+                    if not self.dictionary.find_word(sub_word):
+                        return False
+
+                word += tiles_moved[current_index][3]
+                col += 1
+                current_index += 1
+
+            elif current_board[row][col] != "_":
+                word += current_board[row][col]
+                col += 1
+            elif current_index == len(tiles_moved):
+                break
+            else:
+
+                return False
+
+        if not horizontal:
+            for tile in tiles_moved:
+                tile[0], tile[1] = tile[1], tile[0]
+
+        return word
+
+    @staticmethod
+    def check_first_move_placement(tiles_moved):
+        for tile in tiles_moved:
+            if (tile[0], tile[1]) == (7, 7):
+                return True
+        return False
+
+    def check_active_tile_placement(self, tiles_moved):
+        for tile in tiles_moved:
+            if self.active_tiles[tile[0]][tile[1]]:
+                return True
+        return False
+
     def check_valid_placement(self, tiles_moved):
 
+        # First move should intersect "S" square
+        if self.first_move:
+            self.first_move = False
+            if not self.check_first_move_placement(tiles_moved):
+                return False
+
+        # No tiles were placed - player should hit pass turn if they don't want to play any tiles
         if len(tiles_moved) == 0:
             return False
 
-        for index in tiles_moved:
-            if self.current_board[index[0]][index[1]] != "_":
+        # Check to see if existing tile is already placed in any position
+        for tile in tiles_moved:
+            if self.current_board[tile[0]][tile[1]] != "_":
                 return False
+
+        # Words must connect to existing words on the board
+        if not self.check_active_tile_placement(tiles_moved):
+            return False
 
         # This checks to see that all tiles are placed in either 1 row or 1 column
         cols = set()
@@ -139,45 +256,36 @@ class GameBoard:
         for move in tiles_moved:
             rows.add(move[0])
             cols.add(move[1])
-
-        if len(cols) != 1 and len(rows) != 1:
+        if len(cols) != 1 and len(rows) != 1 and len(tiles_moved) != 1:
             return False
 
-        # TODO There needs to be a check for when only one tile is placed because both rows and cols == 1
         horizontal = True
         if len(cols) == 1:
             horizontal = False
 
-        tiles_moved.sort(key=lambda item: item[1])
-        word = ""
-        current_index = 0
-        row, col = tiles_moved[0][0], tiles_moved[0][1]
-        if horizontal:
-            start_col = col - 1
-            while start_col >= 0 and self.current_board[row][start_col] != "_":
-                word = (self.current_board[row][start_col] + word)
-                start_col -= 1
+        word = self.read_word(tiles_moved, horizontal)
 
-            while col < SQUARES:
-                if current_index < len(tiles_moved) and tiles_moved[current_index][1] == col:
-                    word += tiles_moved[current_index][3]
-                    col += 1
-                    current_index += 1
-                elif self.current_board[row][col] != "_":
-                    word += self.current_board[row][col]
-                    col += 1
-                elif current_index == len(tiles_moved):
-                    break
-                else:
-                    return False
+        # There is ambiguity when only one tile is placed as to the direction. Fixes issue where
+        # single tile placed on horizontal word causes crash because check above sets horizontal = False
+        if len(cols) == 1 and len(rows) == 1:
+            if len(word) == 1:
+                word = self.read_word(tiles_moved, True)
+
+        if not word:
+            return False
 
         if not self.dictionary.find_word(word):
             return False
 
         return True
 
-    def update_allowed_tiles(self):
-        pass
+    def update_active_tiles(self, row, col):
+        indices_to_update = [(row, col), (row, col-1), (row - 1, col), (row, col + 1), (row + 1, col)]
+        for index in indices_to_update:
+            if index[0] >= SQUARES or index[0] < 0 or index[1] >= SQUARES or index[1] < 0:
+                pass
+            else:
+                self.active_tiles[index[0]][index[1]] = True
 
     def score_word(self, board):
         pass
