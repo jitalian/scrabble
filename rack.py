@@ -77,7 +77,7 @@ class Rack:
 
     def draw_rack(self):
         rack_rect = pygame.Rect(BOARD_WIDTH + 15, (7 / 8) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 30, 1.5 * BOARD_WIDTH / SQUARES)
-        pygame.draw.rect(self.screen, DARK_GREY, rack_rect)
+        pygame.draw.rect(self.screen, DARK_GREY, rack_rect, border_radius=15)
         tile_font = pygame.font.Font(None, FONT_SIZE)
         score_font = pygame.font.Font(None, int(FONT_SIZE / 2))
         for i in range(len(self.tiles)):
@@ -107,7 +107,7 @@ class Rack:
 
         move_indices = self.get_move_indices()
 
-        valid_move = self.board.check_valid_placement(move_indices)
+        valid_move = self.board.check_valid_move(move_indices)
 
         if not valid_move:
             self.generate_tile_rects(reset=True)

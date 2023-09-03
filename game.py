@@ -3,7 +3,6 @@ from constants import WINDOW_WIDTH, BOARD_WIDTH
 from bag import TilesBag
 from board import GameBoard
 from rack import Rack
-import time
 from words import Trie
 
 pygame.init()
@@ -15,13 +14,9 @@ screen = pygame.display.set_mode((WINDOW_WIDTH, BOARD_WIDTH))
 board = GameBoard(screen, game_tiles, word_dictionary)
 player_tiles = Rack(game_tiles, screen, board, word_dictionary)
 
-player_score = 0
-cpu_score = 0
-
 running = True
 active_rect = None
 player_move = True
-blank_tile = False
 
 
 def cpu_move():
@@ -68,7 +63,7 @@ while running:
 
     board.draw_board()
     board.draw_rects()
-    board.print_text(game_tiles)
+    board.print_text_all_rects(game_tiles)
     player_tiles.draw_rack()
 
     pygame.display.update()

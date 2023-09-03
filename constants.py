@@ -10,6 +10,9 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 LIGHT_BROWN = (234, 221, 202)
 PINK = (255, 182, 193)
-BLUE = (135, 206, 250)
-DARK_BLUE = (0, 0, 255)
+BLUE1 = (135, 206, 250)
+BLUE2 = (0, 0, 255)
 YELLOW = (255, 255, 51)
+
+COLORS = {"grey": GREY, "dark_grey": DARK_GREY, "black": BLACK, "red": RED, "light_brown": LIGHT_BROWN,
+          "pink": PINK, "blue1": BLUE1, "blue2": BLUE2, "yellow": YELLOW}
