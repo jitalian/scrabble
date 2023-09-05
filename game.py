@@ -4,6 +4,7 @@ from bag import TilesBag
 from board import GameBoard
 from rack import Rack
 from words import Trie
+from computer_player import ComputerPlayer
 
 pygame.init()
 pygame.display.set_caption("Justin's Scrabble")
@@ -13,14 +14,14 @@ game_tiles = TilesBag()
 screen = pygame.display.set_mode((WINDOW_WIDTH, BOARD_WIDTH))
 board = GameBoard(screen, game_tiles, word_dictionary)
 player_tiles = Rack(game_tiles, screen, board, word_dictionary)
+cpu_tiles = Rack(game_tiles, screen, board, word_dictionary)
+
+computer_player = ComputerPlayer(board, cpu_tiles, word_dictionary)
+
 
 running = True
 active_rect = None
 player_move = True
-
-
-def cpu_move():
-    pass
 
 
 while running:
@@ -68,7 +69,7 @@ while running:
 
     pygame.display.update()
     if player_move == -1:
-        cpu_move()
+        computer_player.cpu_move()
         player_move *= -1
 
 pygame.quit()

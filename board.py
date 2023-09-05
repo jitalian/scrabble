@@ -178,6 +178,7 @@ class GameBoard:
 
     def read_word(self, tiles_moved, horizontal):
 
+        move_score = 0
         main_word_score = 0
         sub_word_scores = []
         multiplier = 1
@@ -212,7 +213,7 @@ class GameBoard:
 
                 if sub_word is not None:
                     if not self.dictionary.find_word(sub_word):
-                        return False
+                        return False, move_score
 
                 word += tiles_moved[current_index][3]
                 letter_multiplier = self.get_letter_bonus(row, col, self.bonus_matrix)
@@ -232,18 +233,16 @@ class GameBoard:
                 for score in sub_word_scores:
                     move_score += score
 
-                self.player_score += move_score
-                print(f"SCORE: {move_score}")
                 break
             else:
 
-                return False
+                return False, move_score
 
         if not horizontal:
             for tile in tiles_moved:
                 tile[0], tile[1] = tile[1], tile[0]
 
-        return word
+        return word, move_score
 
     @staticmethod
     def check_first_move_placement(tiles_moved):
@@ -291,13 +290,13 @@ class GameBoard:
         if len(cols) == 1:
             horizontal = False
 
-        word = self.read_word(tiles_moved, horizontal)
+        word, move_score = self.read_word(tiles_moved, horizontal)
 
         # There is ambiguity when only one tile is placed as to the direction. Fixes issue where
         # single tile placed on horizontal word causes crash because check above sets horizontal = False
         if len(cols) == 1 and len(rows) == 1:
             if word is not False and len(word) == 1:
-                word = self.read_word(tiles_moved, True)
+                word, move_score = self.read_word(tiles_moved, True)
 
         if not word:
             return False
@@ -305,6 +304,7 @@ class GameBoard:
         if not self.dictionary.find_word(word):
             return False
 
+        self.player_score += move_score
         return True
 
     def update_active_tiles(self, row, col):
