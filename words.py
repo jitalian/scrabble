@@ -1,3 +1,7 @@
+import string
+import sys
+
+
 class TrieNode:
     def __init__(self):
         self.children = {}
@@ -36,18 +40,19 @@ class Trie:
     def find_prefix(self, prefix):
         current_node = self.root
         for letter in prefix:
-            if letter not in current_node.children:
+            if letter.upper() not in current_node.children:
                 return False
-            current_node = current_node.children[letter]
+            current_node = current_node.children[letter.upper()]
         return True
 
 
 # Testing code
 def main():
     test_trie = Trie("word_list.txt")
-    print(test_trie.find_word("hello"))
+    print(test_trie.find_word(('h', 'e', 'l', 'l', 'o')))
     print(test_trie.find_word("HELLOZ"))
     print(test_trie.find_prefix("ZYZ"))
+
 
 
 if __name__ == "__main__":

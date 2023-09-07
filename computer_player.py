@@ -8,7 +8,7 @@ class ComputerPlayer:
     def __init__(self, board, rack, dictionary):
         self.board = board
         self.rack = rack
-        self.rack.tiles = ['A', 'K', 'C', 'T', 'I', 'B', 'E']
+        self.rack.tiles = ['A', '*', 'C', 'T', 'I', 'E', 'E']
         self.dictionary = dictionary
         self.playable_board_locations = None
         self.allowed_tiles_horizontal_dict = None
@@ -71,14 +71,18 @@ class ComputerPlayer:
     def get_allowed_tiles(self):
 
         if "*" in self.rack.tiles:
-            self.allowed_tiles_horizontal_dict = {location: set(string.ascii_lowercase) for location in self.playable_board_locations}
-            self.allowed_tiles_vertical_dict = {location: set(string.ascii_lowercase) for location in self.playable_board_locations}
+            self.allowed_tiles_horizontal_dict = {location: set(string.ascii_lowercase).union(set(self.rack.tiles)) for location in self.playable_board_locations}
+            self.allowed_tiles_vertical_dict = {location: set(string.ascii_lowercase).union(set(self.rack.tiles)) for location in self.playable_board_locations}
             for location in self.playable_board_locations:
                 for tile in set(string.ascii_lowercase):
                     if not self.check_allowed_vertical(location[0], location[1], tile):
                         self.allowed_tiles_vertical_dict[location].remove(tile)
+                        if tile.upper in set(self.rack.tiles):
+                            self.allowed_tiles_vertical_dict[location].remove(tile.upper())
                     if not self.check_allowed_horizontal(location[0], location[1], tile):
                         self.allowed_tiles_horizontal_dict[location].remove(tile)
+                        if tile.upper in set(self.rack.tiles):
+                            self.allowed_tiles_horizontal_dict[location].remove(tile.upper())
 
         else:
             self.allowed_tiles_horizontal_dict = {location: set(self.rack.tiles) for location in self.playable_board_locations}
@@ -98,11 +102,11 @@ class ComputerPlayer:
                 col += 1
                 continue
             else:
-                if letter in rack_dict_copy and letter.isupper():
-                    rack_dict_copy[letter.upper()] -= 1
-                    if rack_dict_copy[letter.upper()] == -1:
+                if letter.isupper():
+                    rack_dict_copy[letter] -= 1
+                    if rack_dict_copy[letter] == -1:
                         return False
-                elif "*" in rack_dict_copy:
+                elif letter.islower():
                     rack_dict_copy["*"] -= 1
                     if rack_dict_copy["*"] == -1:
                         return False
@@ -110,85 +114,36 @@ class ComputerPlayer:
 
         return True
 
-    # def get_moves_one_location_horizontal(self, location, size, rack_counts_dict):
-    #
-    #     rack_set = set(self.rack.tiles)
-    #     move_lane_left = []
-    #     move_lane_right = []
-    #     row, col = location[0], location[1]
-    #     start_col = col
-    #     end_col = col
-    #     lane_length = 1
-    #     while start_col > 0 and lane_length < size:
-    #         if self.board.current_board[row][start_col] != "_":
-    #             start_col -= 1
+    # @staticmethod
+    # def prefix_from_rack(prefix, rack_dict, row, col):
+    #     rack_dict_copy = copy.copy(rack_dict)
+    #     for letter in prefix:
+    #         if letter.islower():
+    #             rack_dict_copy["*"] -= 1
+    #             if rack_dict_copy["*"] == -1:
+    #                 return False
     #         else:
-    #             start_col -= 1
-    #             lane_length += 1
-    #
-    #     current_col = start_col
-    #     while current_col <= col:
-    #         if (row, current_col) in self.playable_board_locations:
-    #             move_lane_left.append(self.allowed_tiles_horizontal_dict[(row, current_col)])
-    #             current_col += 1
-    #         elif self.board.current_board[row][current_col] != "_":
-    #             move_lane_left.append(self.board.current_board[row][current_col])
-    #             current_col += 1
-    #         else:
-    #             move_lane_left.append(rack_set)
-    #             current_col += 1
-    #
-    #     print("Left", location, size, move_lane_left)
-    #     words_list_left = []
-    #     for i in product(*move_lane_left):
-    #         if self.dictionary.find_word(''.join(i)):
-    #             if self.word_from_rack(i, row, start_col, rack_counts_dict):
-    #                 words_list_left.append(''.join(i))
-    #     print("LEFT", location, words_list_left)
-    #
-    #     lane_length = 1
-    #     while end_col < SQUARES - 1 and lane_length < size:
-    #         if self.board.current_board[row][end_col] != "_":
-    #             end_col += 1
-    #         else:
-    #             end_col += 1
-    #             lane_length += 1
-    #
-    #     current_col = col
-    #     while current_col <= end_col:
-    #         if (row, current_col) in self.playable_board_locations:
-    #             move_lane_right.append(self.allowed_tiles_horizontal_dict[(row, current_col)])
-    #             current_col += 1
-    #         elif self.board.current_board[row][current_col] != "_":
-    #             move_lane_right.append(self.board.current_board[row][current_col])
-    #             current_col += 1
-    #         else:
-    #             move_lane_right.append(rack_set)
-    #             current_col += 1
-    #
-    #     words_list_right = []
-    #     for word in product(*move_lane_right):
-    #         if self.dictionary.find_word(''.join(word)):
-    #             if self.word_from_rack(word, row, col, rack_counts_dict):
-    #                 # score = self.get_score(word, location)
-    #                 # if score > self.best_move[3]:
-    #                 #     best_move = [''.join(word), location, "right", score]
-    #                 words_list_right.append(''.join(word))
-    #
-    #     print("Right", location, move_lane_right)
-    #     print("RIGHT", location, words_list_right)
+    #             rack_dict_copy[letter] -= 1
+    #             if rack_dict_copy[letter] == -1:
+    #                 return False
+    #     return True
 
     def get_set_lookup_matrix(self):
+        contains_wild_card = "*" in self.rack.tiles
         set_lookup_matrix = []
         for i in range(SQUARES):
             row = []
             for j in range(SQUARES):
                 if self.board.current_board[i][j] != "_":
+
                     row.append({self.board.current_board[i][j]})
                 elif (i, j) in self.playable_board_locations:
                     row.append(self.allowed_tiles_horizontal_dict[(i, j)])
                 else:
-                    row.append(set(self.rack.tiles))
+                    if contains_wild_card:
+                        row.append(set(string.ascii_lowercase).union(set(self.rack.tiles)))
+                    else:
+                        row.append(set(self.rack.tiles))
             set_lookup_matrix.append(row)
 
         return set_lookup_matrix
@@ -197,10 +152,13 @@ class ComputerPlayer:
         word_lane = []
         tiles_placed = 0
         valid_lane = 0
+        start_col = col
 
-        if (row, col) in self.playable_board_locations:
-            if col != 0 and self.board.current_board[row][col - 1] != "_":
-                word_lane.append({self.board.current_board[row][col - 1]})
+        if (row, col) in self.playable_board_locations or self.board.current_board[row][col] != "_":
+            if start_col != 0 and self.board.current_board[row][start_col - 1] != "_":
+                while start_col > 0 and self.board.current_board[row][start_col - 1] != "_":
+                    word_lane.insert(0, {self.board.current_board[row][start_col - 1]})
+                    start_col -= 1
 
         while tiles_placed < lane_length and col < SQUARES:
             if (row, col) in self.playable_board_locations:
@@ -214,35 +172,40 @@ class ComputerPlayer:
                 col += 1
                 tiles_placed += 1
 
-                if tiles_placed == lane_length and col - 1 != SQUARES - 1 and self.board.current_board[row][col] != "_":
-                    word_lane.append({self.board.current_board[row][col]})
+                if tiles_placed == lane_length and col - 1 != SQUARES - 1:
+                    while self.board.current_board[row][col] != "_":
+                        word_lane.append({self.board.current_board[row][col]})
+                        col += 1
 
         if tiles_placed != lane_length or set() in word_lane:
-            return False
+            return False, start_col
 
         if valid_lane:
-            return word_lane
+            return word_lane, start_col
 
-        return False
+        return False, start_col
 
     def get_score(self, word, location):
         pass
 
     def cpu_move(self):
-        print(self.rack.tiles)
         rack_counts_dict = {tile: self.rack.tiles.count(tile) for tile in self.rack.tiles}
         self.get_active_tiles()
         self.get_allowed_tiles()
         matrix = self.get_set_lookup_matrix()
-        count = 0
-        for i in range(SQUARES):
-            for j in range(SQUARES):
-                lane = self.get_word_lane(i, j, 2, matrix)
-                if lane is not False:
-                    for _ in product(*lane):
-                        count += 1
-                        pass
+        word_set = set()
+        for row in range(SQUARES):
+            for col in range(SQUARES):
+                for i in range(2, len(self.rack.tiles) + 1, 1):
+                    lane, start_col = self.get_word_lane(row, col, i, matrix)
+                    if lane is not False:
+                        self.find_words(lane, rack_counts_dict, row, start_col)
 
+
+        print("HERE")
+        # self.find_words([set(string.ascii_lowercase).union(set(self.rack.tiles)) for i in range(7)], rack_counts_dict)
+
+        # print(count)
         # self.get_word_lane(7, 1, 7, matrix)
         # for location in self.playable_board_locations:
         #     for size in range(2, 8, 1):
@@ -250,3 +213,23 @@ class ComputerPlayer:
         # print("HERE")
         # for row in self.board.active_tiles:
         #     print(row)
+
+    def find_words(self, letter_sets, rack_dict, row, col):
+
+        if len(letter_sets) == 2:
+            words_set = set()
+            for i in product(letter_sets[0], letter_sets[1]):
+                word = ''.join(i)
+                if self.dictionary.find_word(word) and self.word_from_rack(word, row, col, rack_dict):
+                    words_set.add(word)
+            return words_set
+        else:
+            prefix_set = set()
+            for i in product(letter_sets[0], letter_sets[1]):
+                prefix = ''.join(i)
+                if self.dictionary.find_prefix(prefix) and self.word_from_rack(prefix, row, col, rack_dict):
+                    prefix_set.add(prefix)
+            return self.find_words([prefix_set, *letter_sets[2:]], rack_dict, row, col)
+
+
+
