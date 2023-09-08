@@ -29,12 +29,13 @@ class TilesBag:
             return random_tile
 
         else:
-            if len(self.tiles) == 1 and self.tiles[0] == "*":
+            if len(self.tiles) == 1 and "*" in self.tiles:
                 return None
             else:
                 while 1:
                     random_tile = random.choice(self.tiles)
                     if random_tile != "*":
+                        self.tiles.remove(random_tile)
                         return random_tile
 
     def get_tile_points(self, tile):

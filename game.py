@@ -18,7 +18,7 @@ game_tiles = TilesBag()
 screen = pygame.display.set_mode((WINDOW_WIDTH, BOARD_WIDTH))
 board = GameBoard(screen, game_tiles, word_dictionary)
 player_tiles = Rack(game_tiles, screen, board, word_dictionary)
-player_tiles.tiles = ['R', 'S', 'T', 'L', 'H', 'A', 'E']
+player_tiles.tiles = ['G', 'S', 'I', 'G', 'H', '*', '*']
 cpu_tiles = Rack(game_tiles, screen, board, word_dictionary)
 
 computer_player = ComputerPlayer(board, cpu_tiles, word_dictionary, game_tiles)
