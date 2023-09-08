@@ -19,14 +19,23 @@ class TilesBag:
         # Short game for testing
         # self.tiles = ["A"] * 2 + ["B"] * 2 + ["D"] * 2 + ["L"] * 2 + ["N"] * 2 + ["S"] * 2 + ["*"] * 2
 
-    def get_random_tile(self):
+    def get_random_tile(self, blank=True):
         if len(self.tiles) == 0:
             return None
 
-        random_tile = random.choice(self.tiles)
-        self.tiles.remove(random_tile)
+        if blank:
+            random_tile = random.choice(self.tiles)
+            self.tiles.remove(random_tile)
+            return random_tile
 
-        return random_tile
+        else:
+            if len(self.tiles) == 1 and self.tiles[0] == "*":
+                return None
+            else:
+                while 1:
+                    random_tile = random.choice(self.tiles)
+                    if random_tile != "*":
+                        return random_tile
 
     def get_tile_points(self, tile):
         return self.points[tile]

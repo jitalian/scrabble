@@ -135,9 +135,6 @@ class GameBoard:
         self.print_text_one_rect(f"Tiles Remaining: {game_tiles.get_tiles_remaining()}", self.tiles_remaining_rect)
         self.print_text_one_rect("Exchange All Tiles", self.exchange_tiles_rect)
 
-    def generate_word_lanes(self):
-        pass
-
     def read_sub_word(self, row, col, current_board, letter):
 
         sub_word = letter
@@ -212,7 +209,7 @@ class GameBoard:
                 sub_word_scores.append(sub_score)
 
                 if sub_word is not None:
-                    if not self.dictionary.find_word(sub_word):
+                    if not self.dictionary.find_word(sub_word.upper()):
                         return False, move_score
 
                 word += tiles_moved[current_index][3]
@@ -301,7 +298,7 @@ class GameBoard:
         if not word:
             return False
 
-        if not self.dictionary.find_word(word):
+        if not self.dictionary.find_word(word.upper()):
             return False
 
         self.player_score += move_score

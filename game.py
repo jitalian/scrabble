@@ -1,3 +1,7 @@
+import copy
+import string
+import time
+
 import pygame
 from constants import WINDOW_WIDTH, BOARD_WIDTH
 from bag import TilesBag
@@ -9,14 +13,15 @@ from computer_player import ComputerPlayer
 pygame.init()
 pygame.display.set_caption("Justin's Scrabble")
 
-word_dictionary = Trie("word_list.txt")
+word_dictionary = Trie("blanks_dict.txt")
 game_tiles = TilesBag()
 screen = pygame.display.set_mode((WINDOW_WIDTH, BOARD_WIDTH))
 board = GameBoard(screen, game_tiles, word_dictionary)
 player_tiles = Rack(game_tiles, screen, board, word_dictionary)
+player_tiles.tiles = ['R', 'S', 'T', 'L', 'H', 'A', 'E']
 cpu_tiles = Rack(game_tiles, screen, board, word_dictionary)
 
-computer_player = ComputerPlayer(board, cpu_tiles, word_dictionary)
+computer_player = ComputerPlayer(board, cpu_tiles, word_dictionary, game_tiles)
 
 
 running = True
@@ -62,6 +67,7 @@ while running:
             if active_rect is not None:
                 active_rect.move_ip(event.rel)
 
+    screen.fill("black")
     board.draw_board()
     board.draw_rects()
     board.print_text_all_rects(game_tiles)
