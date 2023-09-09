@@ -34,7 +34,7 @@ class Trie:
         with open(self.dict_file_path) as f:
             for line in f:
                 word = line.strip()
-                if len(word) < 10:
+                if len(word) < 16:
                     self.insert_word(word)
 
     def find_prefix(self, prefix):
@@ -54,8 +54,6 @@ def main():
     print(test_trie.find_prefix("HEL*O"))
     while 1:
         user_input = input("Input ")
-
-
 
 if __name__ == "__main__":
     main()

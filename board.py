@@ -44,6 +44,8 @@ class GameBoard:
         self.reset_rack_rect = pygame.Rect(BOARD_WIDTH + 25, (3 / 5) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.pass_turn_rect = pygame.Rect(BOARD_WIDTH + 25, (7 / 10) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.submit_rect = pygame.Rect(BOARD_WIDTH + 25, (4 / 5) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
+        self.blank_prompt_rect_background = pygame.Rect((2/3) * WINDOW_WIDTH, (1/3) * BOARD_WIDTH, (1/2) * BOARD_WIDTH, (5/8) * BOARD_WIDTH)
+        self.pick_blank_prompt = pygame.Rect(BOARD_WIDTH + 25, (1/4) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
 
         self.player_score = 0
         self.cpu_score = 0
@@ -76,8 +78,8 @@ class GameBoard:
         for i in range(6):
             row = []
             for j in range(5):
-                blank_tile_rect = pygame.Rect((7 / 24) * WINDOW_WIDTH + PADDING + j * (1 / 12) * WINDOW_WIDTH, (1/8) * WINDOW_WIDTH + PADDING + i * (1 / 12) * WINDOW_WIDTH,
-                                              (1 / 12) * WINDOW_WIDTH - PADDING, (1 / 12) * WINDOW_WIDTH - PADDING)
+                blank_tile_rect = pygame.Rect((41/60) * WINDOW_WIDTH + PADDING + j * (1 / 17) * WINDOW_WIDTH, (2/9) * WINDOW_WIDTH + PADDING + i * (1 / 17) * WINDOW_WIDTH,
+                                              (1 / 17) * WINDOW_WIDTH - PADDING, (1 / 17) * WINDOW_WIDTH - PADDING)
                 row.append((blank_tile_rect, string.ascii_lowercase[index]))
                 index += 1
                 if index == 26:
@@ -199,13 +201,14 @@ class GameBoard:
         current_index = 0
         row, col = tiles_moved[0][0], tiles_moved[0][1]
         start_col = col - 1
+        print(tiles_moved)
 
         while start_col >= 0 and current_board[row][start_col] != "_":
             word = (current_board[row][start_col] + word)
             main_word_score += self.bag.get_tile_points(current_board[row][start_col])
             start_col -= 1
 
-        while col < SQUARES:
+        while col < SQUARES + 1:
             if current_index < len(tiles_moved) and tiles_moved[current_index][1] == col:
 
                 multiplier *= self.get_word_bonus(row, col, self.bonus_matrix)
@@ -221,11 +224,12 @@ class GameBoard:
                 letter_multiplier = self.get_letter_bonus(row, col, self.bonus_matrix)
                 letter_score = self.bag.get_tile_points(tiles_moved[current_index][3])
                 main_word_score += (letter_score * letter_multiplier)
+                print(word, col, current_index)
                 col += 1
                 current_index += 1
                 tiles_placed += 1
 
-            elif current_board[row][col] != "_":
+            elif col < SQUARES and current_board[row][col] != "_":
                 word += current_board[row][col]
                 main_word_score += self.bag.get_tile_points(current_board[row][col])
                 col += 1

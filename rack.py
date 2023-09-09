@@ -11,6 +11,7 @@ class Rack:
         self.tiles = [self.game_tiles.get_random_tile() for i in range(7)]
         self.tile_rects = []
         self.generate_tile_rects()
+        self.blank_prompt_text = "CHOOSE BLANK"
 
     def generate_tile_rects(self, reset=False):
         if reset is True:
@@ -27,6 +28,13 @@ class Rack:
         prompt = True
         while prompt:
             self.screen.fill("black")
+            self.board.draw_board()
+            self.board.draw_rects()
+            self.board.print_text_all_rects(self.game_tiles)
+            pygame.draw.rect(self.screen, COLORS['black'], self.board.blank_prompt_rect_background)
+            pygame.draw.rect(self.screen, COLORS['red'], self.board.pick_blank_prompt, border_radius=15)
+            self.board.print_text_one_rect(self.blank_prompt_text, self.board.pick_blank_prompt)
+            self.draw_rack()
             self.board.draw_blank_tile_rects()
 
             for event in pygame.event.get():
@@ -93,12 +101,16 @@ class Rack:
 
     def get_move_indices(self):
         tiles_moved = []
+        blank_chosen = False
         for i in range(len(self.tiles)):
             for j in range(SQUARES):
                 for k in range(SQUARES):
                     if self.board.board[j][k].collidepoint(self.tile_rects[i].center):
                         if self.tiles[i] == "*":
+                            if blank_chosen is True:
+                                self.blank_prompt_text = "CHOOSE NEXT BLANK"
                             tiles_moved.append([j, k, i, self.blank_tile_prompt()])
+                            blank_chosen = True
                         else:
                             tiles_moved.append([j, k, i, self.tiles[i]])
         return tiles_moved
