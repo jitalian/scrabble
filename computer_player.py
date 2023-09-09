@@ -9,7 +9,7 @@ class ComputerPlayer:
         self.board = board
         self.rack = rack
         self.bag = bag
-        self.rack.tiles = ['I', 'F', 'C', 'Y', 'D', 'A', '*']
+        # self.rack.tiles = ['T', 'S', '*', 'E', 'E', 'R', 'M']
         self.dictionary = dictionary
         self.playable_board_locations = None
         self.allowed_tiles_horizontal_dict = None
@@ -244,21 +244,26 @@ class ComputerPlayer:
                 col += 1
             else:
                 self.rack.tiles.remove("*")
-                if letter.islower:
+                if letter != "*":
                     self.board.current_board[row][col] = letter
                     self.board.update_active_tiles(row, col)
                     tiles_to_replace += 1
                     col += 1
                 else:
                     for blank_letter in string.ascii_lowercase:
+                        letter_found = False
                         if self.dictionary.find_word(best_move[1].replace("*", blank_letter).upper()):
                             self.board.current_board[row][col] = blank_letter
                             self.board.update_active_tiles(row, col)
                             tiles_to_replace += 1
+                            letter_found = True
                             col += 1
 
-                        if self.board.current_board[row][col] != "_":
+                        if letter_found:
                             break
+
+                    # if self.board.current_board[row][col] != "_":
+                    #     break
 
         for i in range(tiles_to_replace):
             if "*" in self.rack.tiles:
@@ -289,12 +294,17 @@ class ComputerPlayer:
                 if score > best_move[2]:
                     best_move = [location, word, score]
 
+        print("BEST MOVE: ", best_move)
+        # best_move = [(7, 8), 'STE*MER', 61]
+        if len(word_set) == 0:
+            return False
+
         print(self.board.current_board)
-        print(best_move)
-        print("BEFORE ", self.rack.tiles)
+        print("RACK BEFORE: ", self.rack.tiles)
         self.play_best_move(best_move)
-        print("AFTER ", self.rack.tiles)
-        print()
+        print("RACK AFTER: ", self.rack.tiles)
+
+        return best_move
 
     def find_words(self, letter_sets, rack_dict, row, col):
 

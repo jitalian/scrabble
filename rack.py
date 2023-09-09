@@ -1,4 +1,4 @@
-from constants import BOARD_WIDTH, SQUARES, WINDOW_WIDTH, DARK_GREY, YELLOW, PADDING, FONT_SIZE, BLACK, RED
+from constants import BOARD_WIDTH, SQUARES, WINDOW_WIDTH, COLORS, PADDING, FONT_SIZE
 import pygame
 
 
@@ -15,13 +15,13 @@ class Rack:
     def generate_tile_rects(self, reset=False):
         if reset is True:
             self.tile_rects = []
-        x_pos = BOARD_WIDTH + PADDING + 27
-        y_pos = (7 / 8) * BOARD_WIDTH + 20
+        x_pos = BOARD_WIDTH + PADDING + (1/45) * WINDOW_WIDTH
+        y_pos = (7/8) * BOARD_WIDTH + (1/60) * WINDOW_WIDTH
         for i in range(len(self.tiles)):
             tile_size = BOARD_WIDTH / 18
             tile_rect = pygame.Rect(x_pos, y_pos, tile_size, tile_size)
             self.tile_rects.append(tile_rect)
-            x_pos += (tile_size + 3 * PADDING)
+            x_pos += (tile_size + (WINDOW_WIDTH/400) * PADDING)
 
     def blank_tile_prompt(self):
         prompt = True
@@ -48,36 +48,36 @@ class Rack:
             pygame.display.update()
 
     def draw_blank(self, tile, tile_rect):
-        pygame.draw.rect(self.screen, YELLOW, tile_rect)
-        text = self.board.tile_font.render(tile, True, BLACK)
+        pygame.draw.rect(self.screen, COLORS['yellow'], tile_rect)
+        text = self.board.tile_font.render(tile, True, COLORS['black'])
         text_rect = text.get_rect(center=tile_rect.center)
         self.screen.blit(text, text_rect)
 
     @staticmethod
     def draw_tile(screen, tile, tile_rect, tile_font, score_font, bag):
-        pygame.draw.rect(screen, YELLOW, tile_rect)
+        pygame.draw.rect(screen, COLORS['yellow'], tile_rect)
 
         if tile.isupper():
-            text = tile_font.render(tile, True, BLACK)
+            text = tile_font.render(tile, True, COLORS['black'])
             text_rect = text.get_rect(center=tile_rect.center)
             screen.blit(text, text_rect)
 
-            text = score_font.render(str(bag.points[tile]), True, BLACK)
+            text = score_font.render(str(bag.points[tile]), True, COLORS['black'])
             text_rect = text.get_rect(center=(tile_rect.right - 8, tile_rect.bottom - 8))
             screen.blit(text, text_rect)
 
         else:
-            text = tile_font.render(tile.upper(), True, RED)
+            text = tile_font.render(tile.upper(), True, COLORS['red'])
             text_rect = text.get_rect(center=tile_rect.center)
             screen.blit(text, text_rect)
 
-            text = score_font.render("0", True, RED)
+            text = score_font.render("0", True, COLORS['red'])
             text_rect = text.get_rect(center=(tile_rect.right - 8, tile_rect.bottom - 8))
             screen.blit(text, text_rect)
 
     def draw_rack(self):
         rack_rect = pygame.Rect(BOARD_WIDTH + 15, (7 / 8) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 30, 1.5 * BOARD_WIDTH / SQUARES)
-        pygame.draw.rect(self.screen, DARK_GREY, rack_rect, border_radius=15)
+        pygame.draw.rect(self.screen, COLORS['dark_grey'], rack_rect, border_radius=15)
         tile_font = pygame.font.Font(None, FONT_SIZE)
         score_font = pygame.font.Font(None, int(FONT_SIZE / 2))
         for i in range(len(self.tiles)):
@@ -108,7 +108,6 @@ class Rack:
         move_indices = self.get_move_indices()
 
         valid_move = self.board.check_valid_move(move_indices)
-
         if not valid_move:
             self.generate_tile_rects(reset=True)
             return False
@@ -120,6 +119,7 @@ class Rack:
             else:
                 self.board.current_board[row][col] = self.tiles[index]
             self.board.update_active_tiles(row, col)
+
             new_tile = self.game_tiles.get_random_tile()
             if new_tile is not None:
                 self.tiles[index] = new_tile
@@ -127,4 +127,5 @@ class Rack:
                 self.tiles[index] = "_"
 
         self.generate_tile_rects(reset=True)
+
         return True

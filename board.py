@@ -31,7 +31,7 @@ class GameBoard:
         self.current_board = numpy.array([["_" for _ in range(SQUARES)] for _ in range(SQUARES)])
         self.board = []
         self.blank_tile_prompt_rects = []
-        self.create_tile_rects()
+        self.create_blank_tile_rects()
 
         self.tile_font = pygame.font.Font(None, FONT_SIZE)
         self.score_font = pygame.font.Font(None, int(FONT_SIZE / 2))
@@ -63,7 +63,7 @@ class GameBoard:
                 if (i, j) == (7, 7):
                     self.bonus_matrix[i][j] = ("ST", "pink")
 
-    def create_tile_rects(self):
+    def create_blank_tile_rects(self):
 
         for i in range(SQUARES):
             row = []
@@ -76,7 +76,7 @@ class GameBoard:
         for i in range(6):
             row = []
             for j in range(5):
-                blank_tile_rect = pygame.Rect((7 / 24) * WINDOW_WIDTH + PADDING + j * (1 / 12) * WINDOW_WIDTH, 0.125 * WINDOW_WIDTH + PADDING + i * (1 / 12) * WINDOW_WIDTH,
+                blank_tile_rect = pygame.Rect((7 / 24) * WINDOW_WIDTH + PADDING + j * (1 / 12) * WINDOW_WIDTH, (1/8) * WINDOW_WIDTH + PADDING + i * (1 / 12) * WINDOW_WIDTH,
                                               (1 / 12) * WINDOW_WIDTH - PADDING, (1 / 12) * WINDOW_WIDTH - PADDING)
                 row.append((blank_tile_rect, string.ascii_lowercase[index]))
                 index += 1
@@ -138,11 +138,8 @@ class GameBoard:
     def read_sub_word(self, row, col, current_board, letter):
 
         sub_word = letter
-        multiplier = 1
-        if self.bonus_matrix[row][col][0] == "DW":
-            multiplier = 2
-        elif self.bonus_matrix[row][col][0] == "TW":
-            multiplier = 3
+
+        multiplier = self.get_word_bonus(row, col, self.bonus_matrix)
 
         row_below = row + 1
         letter_multiplier = self.get_letter_bonus(row, col, self.bonus_matrix)
@@ -173,12 +170,22 @@ class GameBoard:
         else:
             return 1
 
+    @staticmethod
+    def get_word_bonus(row, col, bonus_matrix):
+        if bonus_matrix[row][col][0] == "DW" or bonus_matrix[row][col][0] == "ST":
+            return 2
+        elif bonus_matrix[row][col][0] == "TW":
+            return 3
+        else:
+            return 1
+
     def read_word(self, tiles_moved, horizontal):
 
         move_score = 0
         main_word_score = 0
         sub_word_scores = []
         multiplier = 1
+        tiles_placed = 0
 
         if horizontal:
             current_board = self.current_board
@@ -200,10 +207,8 @@ class GameBoard:
 
         while col < SQUARES:
             if current_index < len(tiles_moved) and tiles_moved[current_index][1] == col:
-                if self.bonus_matrix[row][col][0] == "DW" or self.bonus_matrix[row][col][0] == "ST":
-                    multiplier *= 2
-                elif self.bonus_matrix[row][col][0] == "TW":
-                    multiplier *= 3
+
+                multiplier *= self.get_word_bonus(row, col, self.bonus_matrix)
 
                 sub_word, sub_score = self.read_sub_word(row, col, current_board, tiles_moved[current_index][3])
                 sub_word_scores.append(sub_score)
@@ -218,6 +223,7 @@ class GameBoard:
                 main_word_score += (letter_score * letter_multiplier)
                 col += 1
                 current_index += 1
+                tiles_placed += 1
 
             elif current_board[row][col] != "_":
                 word += current_board[row][col]
@@ -230,9 +236,11 @@ class GameBoard:
                 for score in sub_word_scores:
                     move_score += score
 
+                if tiles_placed == 7:
+                    move_score += 50
                 break
-            else:
 
+            else:
                 return False, move_score
 
         if not horizontal:
@@ -311,6 +319,3 @@ class GameBoard:
                 pass
             else:
                 self.active_tiles[index[0]][index[1]] = True
-
-    def score_word(self, board):
-        pass
