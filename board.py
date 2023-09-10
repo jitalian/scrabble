@@ -38,17 +38,22 @@ class GameBoard:
 
         self.player_score_rect = pygame.Rect(BOARD_WIDTH + 25, 25, (1 / 6) * WINDOW_WIDTH - 30, BOARD_WIDTH / SQUARES)
         self.cpu_score_rect = pygame.Rect(BOARD_WIDTH + (1 / 6) * WINDOW_WIDTH + 5, 25, (1 / 6) * WINDOW_WIDTH - 30, BOARD_WIDTH / SQUARES)
-        self.tiles_remaining_rect = pygame.Rect(BOARD_WIDTH + 25, (1 / 10) * BOARD_WIDTH + 20, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
+        self.tiles_remaining_rect = pygame.Rect(BOARD_WIDTH + 25, (1 / 10) * BOARD_WIDTH + 8, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.exchange_tiles_rect = pygame.Rect(BOARD_WIDTH + 25, (4 / 10) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.end_game_rect = pygame.Rect(BOARD_WIDTH + 25, (1 / 2) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.reset_rack_rect = pygame.Rect(BOARD_WIDTH + 25, (3 / 5) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.pass_turn_rect = pygame.Rect(BOARD_WIDTH + 25, (7 / 10) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.submit_rect = pygame.Rect(BOARD_WIDTH + 25, (4 / 5) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
-        self.blank_prompt_rect_background = pygame.Rect((2/3) * WINDOW_WIDTH, (1/3) * BOARD_WIDTH, (1/2) * BOARD_WIDTH, (5/8) * BOARD_WIDTH)
-        self.pick_blank_prompt = pygame.Rect(BOARD_WIDTH + 25, (1/4) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
+        self.blank_prompt_rect_background = pygame.Rect((2 / 3) * WINDOW_WIDTH, (1 / 6) * BOARD_WIDTH, (1 / 2) * BOARD_WIDTH, (3/4) * BOARD_WIDTH)
+        self.pick_blank_prompt = pygame.Rect(BOARD_WIDTH + 25, (1 / 4) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
+        self.cpu_move_rect = pygame.Rect(BOARD_WIDTH + 25, (2 / 10) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
+        self.player_move_rect = pygame.Rect(BOARD_WIDTH + 25, (9 / 32) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
 
         self.player_score = 0
         self.cpu_score = 0
+
+        self.player_last_move_text = "You:"
+        self.cpu_last_move_text = "CPU:"
 
     def generate_bonus_matrix(self):
 
@@ -78,7 +83,7 @@ class GameBoard:
         for i in range(6):
             row = []
             for j in range(5):
-                blank_tile_rect = pygame.Rect((41/60) * WINDOW_WIDTH + PADDING + j * (1 / 17) * WINDOW_WIDTH, (2/9) * WINDOW_WIDTH + PADDING + i * (1 / 17) * WINDOW_WIDTH,
+                blank_tile_rect = pygame.Rect((41 / 60) * WINDOW_WIDTH + PADDING + j * (1 / 17) * WINDOW_WIDTH, (2 / 9) * WINDOW_WIDTH + PADDING + i * (1 / 17) * WINDOW_WIDTH,
                                               (1 / 17) * WINDOW_WIDTH - PADDING, (1 / 17) * WINDOW_WIDTH - PADDING)
                 row.append((blank_tile_rect, string.ascii_lowercase[index]))
                 index += 1
@@ -121,21 +126,25 @@ class GameBoard:
         pygame.draw.rect(self.screen, COLORS['grey'], self.end_game_rect, border_radius=15)
         pygame.draw.rect(self.screen, COLORS['grey'], self.tiles_remaining_rect, border_radius=15)
         pygame.draw.rect(self.screen, COLORS['grey'], self.exchange_tiles_rect, border_radius=15)
+        pygame.draw.rect(self.screen, COLORS['dark_grey'], self.cpu_move_rect, border_radius=15)
+        pygame.draw.rect(self.screen, COLORS['dark_grey'], self.player_move_rect, border_radius=15)
 
-    def print_text_one_rect(self, text, rect):
-        text = self.tile_font.render(text, True, COLORS['black'])
+    def print_text_one_rect(self, text, rect, font):
+        text = font.render(text, True, COLORS['black'])
         text_rect = text.get_rect(center=rect.center)
         self.screen.blit(text, text_rect)
 
     def print_text_all_rects(self, game_tiles):
-        self.print_text_one_rect(f"YOU: {self.player_score}", self.player_score_rect)
-        self.print_text_one_rect(f"CPU: {self.cpu_score}", self.cpu_score_rect)
-        self.print_text_one_rect("SUBMIT WORD", self.submit_rect)
-        self.print_text_one_rect("Reset Rack", self.reset_rack_rect)
-        self.print_text_one_rect("Pass Turn", self.pass_turn_rect)
-        self.print_text_one_rect("END GAME", self.end_game_rect)
-        self.print_text_one_rect(f"Tiles Remaining: {game_tiles.get_tiles_remaining()}", self.tiles_remaining_rect)
-        self.print_text_one_rect("Exchange All Tiles", self.exchange_tiles_rect)
+        self.print_text_one_rect(f"YOU: {self.player_score}", self.player_score_rect, self.tile_font)
+        self.print_text_one_rect(f"CPU: {self.cpu_score}", self.cpu_score_rect, self.tile_font)
+        self.print_text_one_rect("SUBMIT WORD", self.submit_rect, self.tile_font)
+        self.print_text_one_rect("Reset Rack", self.reset_rack_rect, self.tile_font)
+        self.print_text_one_rect("Pass Turn", self.pass_turn_rect, self.tile_font)
+        self.print_text_one_rect("END GAME", self.end_game_rect, self.tile_font)
+        self.print_text_one_rect(f"Tiles Remaining: {game_tiles.get_tiles_remaining()}", self.tiles_remaining_rect, self.tile_font)
+        self.print_text_one_rect("Exchange All Tiles", self.exchange_tiles_rect, self.tile_font)
+        self.print_text_one_rect(self.cpu_last_move_text, self.cpu_move_rect, pygame.font.Font(None, int(FONT_SIZE * 0.9)))
+        self.print_text_one_rect(self.player_last_move_text, self.player_move_rect, pygame.font.Font(None, int(FONT_SIZE * 0.9)))
 
     def read_sub_word(self, row, col, current_board, letter):
 
@@ -312,6 +321,7 @@ class GameBoard:
             return False
 
         self.player_score += move_score
+        self.player_last_move_text = f"You: {word.lower()} for {move_score}!"
         return True
 
     def update_active_tiles(self, row, col):

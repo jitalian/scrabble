@@ -125,7 +125,7 @@ def run_game():
 
         board = GameBoard(screen, game_tiles, word_dictionary)
         player_tiles = Rack(game_tiles, screen, board, word_dictionary)
-        # player_tiles.tiles = ['H', 'A', '*', '*', 'U', 'N', 'E']
+        # player_tiles.tiles = ['H', 'A', 'T', '*', 'U', 'N', 'E']
         cpu_tiles = Rack(game_tiles, screen, board, word_dictionary)
 
         computer_player = ComputerPlayer(board, cpu_tiles, word_dictionary, game_tiles)
@@ -161,6 +161,7 @@ def run_game():
                             game_running = False
 
                         if board.exchange_tiles_rect.collidepoint(event.pos):
+                            player_pass += 1
                             player_move *= -1
                             player_tiles.exchange_tiles()
 
@@ -179,7 +180,7 @@ def run_game():
             player_tiles.draw_rack()
 
             pygame.display.update()
-            if player_move == -1:
+            if player_move == -1 and player_tiles.tiles.count("_") != 7:
                 if not computer_player.cpu_move():
                     cpu_pass += 1
                 player_move *= -1
@@ -212,7 +213,6 @@ def run_game():
                     if event.button == 1:
                         if main_menu_rect.collidepoint(event.pos):
                             end_screen = False
-
 
     pygame.quit()
 
