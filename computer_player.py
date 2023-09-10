@@ -335,7 +335,6 @@ class ComputerPlayer:
 
         return word, move_score, blank_value
 
-
     def play_best_move_horizontal(self, best_move):
 
         self.board.cpu_score += best_move[2]
@@ -371,9 +370,6 @@ class ComputerPlayer:
 
                         if letter_found:
                             break
-
-                    # if self.board.current_board[row][col] != "_":
-                    #     break
 
         for i in range(tiles_to_replace):
             if "*" in self.rack.tiles:
@@ -419,9 +415,6 @@ class ComputerPlayer:
                         if letter_found:
                             break
 
-                    # if self.board.current_board[row][col] != "_":
-                    #     break
-
         for i in range(tiles_to_replace):
             if "*" in self.rack.tiles:
                 new_tile = self.bag.get_random_tile(False)
@@ -438,7 +431,9 @@ class ComputerPlayer:
         self.get_active_tiles()
         self.get_allowed_tiles()
         matrix_horizontal = self.get_set_lookup_matrix(True)
+        print("Mat H", matrix_horizontal)
         matrix_vertical = self.get_set_lookup_matrix(False)
+        print("Mat V", matrix_vertical)
         word_set_horizontal = set()
         word_set_vertical = set()
         for row in range(SQUARES):
@@ -447,19 +442,17 @@ class ComputerPlayer:
                     lane_horizontal, start_col = self.get_word_lane_horizontal(row, col, i, matrix_horizontal)
                     lane_vertical, start_row = self.get_word_lane_vertical(row, col, i, matrix_vertical)
                     if lane_horizontal is not False:
-                        word_set_horizontal = word_set_horizontal.union(self.find_words(lane_horizontal, rack_counts_dict, row, start_col))
+                        word_set_horizontal = word_set_horizontal.union(self.find_words_horizontal(lane_horizontal, rack_counts_dict, row, start_col))
                     if lane_vertical is not False:
-                        word_set_vertical = word_set_vertical.union(self.find_words(lane_vertical, rack_counts_dict, start_row, col))
+                        word_set_vertical = word_set_vertical.union(self.find_words_vertical(lane_vertical, rack_counts_dict, start_row, col))
 
         for location, word in word_set_horizontal:
-            # word, score, blank_value = self.calculate_word_score_horizontal(location, word)
             word, score, blank_value = self.calculate_word_score_horizontal(location, word)
             if score is not False:
                 if score > best_move_horizontal[2]:
                     best_move_horizontal = [location, word, score]
 
         for location, word in word_set_vertical:
-            # word, score, blank_value = self.calculate_word_score_horizontal(location, word)
             word, score, blank_value = self.calculate_word_score_vertical(location, word)
             if score is not False:
                 if score > best_move_vertical[2]:
@@ -467,27 +460,40 @@ class ComputerPlayer:
 
         print("BEST MOVE VERTICAL: ", best_move_vertical)
         print("BEST MOVE HORIZONTAL: ", best_move_horizontal)
-        # best_move = [(7, 7), 'STEAMEr', 61]
         if len(word_set_vertical) == 0 and len(word_set_horizontal) == 0:
             return False
 
         print(self.board.current_board)
         print("RACK BEFORE: ", self.rack.tiles)
+
         if best_move_vertical[2] > best_move_horizontal[2]:
             self.play_best_move_vertical(best_move_vertical)
 
             print("RACK AFTER: ", self.rack.tiles)
             return best_move_vertical
         else:
-            self.play_best_move_horizontal(best_move_vertical)
-
+            self.play_best_move_horizontal(best_move_horizontal)
             print("RACK AFTER: ", self.rack.tiles)
             return best_move_horizontal
 
+    def find_words_horizontal(self, letter_sets, rack_dict, row, col):
 
+        if len(letter_sets) == 2:
+            words_set = set()
+            for i in product(letter_sets[0], letter_sets[1]):
+                word = ''.join(i)
+                if self.dictionary.find_word(word) and self.word_from_rack_horizontal(word, row, col, rack_dict):
+                    words_set.add(((row, col), word))
+            return words_set
+        else:
+            prefix_set = set()
+            for i in product(letter_sets[0], letter_sets[1]):
+                prefix = ''.join(i)
+                if self.dictionary.find_prefix(prefix) and self.word_from_rack_horizontal(prefix, row, col, rack_dict):
+                    prefix_set.add(prefix)
+            return self.find_words_horizontal([prefix_set, *letter_sets[2:]], rack_dict, row, col)
 
-
-    def find_words(self, letter_sets, rack_dict, row, col):
+    def find_words_vertical(self, letter_sets, rack_dict, row, col):
 
         if len(letter_sets) == 2:
             words_set = set()
@@ -502,4 +508,4 @@ class ComputerPlayer:
                 prefix = ''.join(i)
                 if self.dictionary.find_prefix(prefix) and self.word_from_rack_vertical(prefix, row, col, rack_dict):
                     prefix_set.add(prefix)
-            return self.find_words([prefix_set, *letter_sets[2:]], rack_dict, row, col)
+            return self.find_words_vertical([prefix_set, *letter_sets[2:]], rack_dict, row, col)

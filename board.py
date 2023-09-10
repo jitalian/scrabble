@@ -201,7 +201,6 @@ class GameBoard:
         current_index = 0
         row, col = tiles_moved[0][0], tiles_moved[0][1]
         start_col = col - 1
-        print(tiles_moved)
 
         while start_col >= 0 and current_board[row][start_col] != "_":
             word = (current_board[row][start_col] + word)
@@ -224,7 +223,6 @@ class GameBoard:
                 letter_multiplier = self.get_letter_bonus(row, col, self.bonus_matrix)
                 letter_score = self.bag.get_tile_points(tiles_moved[current_index][3])
                 main_word_score += (letter_score * letter_multiplier)
-                print(word, col, current_index)
                 col += 1
                 current_index += 1
                 tiles_placed += 1

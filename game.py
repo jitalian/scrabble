@@ -26,7 +26,6 @@ def print_text_one_rect(text, rect, font, screen, color):
 
 
 def welcome_screen(screen):
-
     scrabble_rect = pygame.Rect(0.125 * WINDOW_WIDTH, 0.15 * BOARD_WIDTH, 0.75 * WINDOW_WIDTH, 0.4 * BOARD_WIDTH)
     quit_rect = pygame.Rect(0.125 * WINDOW_WIDTH, 0.6 * BOARD_WIDTH, 0.35 * WINDOW_WIDTH, 0.2 * BOARD_WIDTH)
     begin_game_rect = pygame.Rect(0.525 * WINDOW_WIDTH, 0.6 * BOARD_WIDTH, 0.35 * WINDOW_WIDTH, 0.2 * BOARD_WIDTH)
@@ -63,7 +62,6 @@ def welcome_screen(screen):
 
 
 def information_screen(screen):
-
     line1_rect = pygame.Rect(0, 0, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
     line2_rect = pygame.Rect(0, 0.125 * BOARD_WIDTH, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
     line3_rect = pygame.Rect(0, 0.25 * BOARD_WIDTH, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
@@ -83,16 +81,16 @@ def information_screen(screen):
         pygame.draw.rect(screen, COLORS['black'], line5_rect)
         pygame.draw.rect(screen, COLORS['black'], line6_rect)
         pygame.draw.rect(screen, COLORS['black'], line7_rect)
-        pygame.draw.rect(screen, COLORS['dark_grey'], line8_rect, border_radius=15)
+        pygame.draw.rect(screen, COLORS['blue1'], line8_rect, border_radius=15)
 
         print_text_one_rect("WARNING:", line1_rect, pygame.font.Font(None, int(FONT_SIZE * 2)), screen, "red")
-        print_text_one_rect("This game doesn't use the official scrabble dictionary.", line2_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "white")
-        print_text_one_rect("It uses the the open-source wordnik list found at:", line3_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "white")
-        print_text_one_rect("https://github.com/wordnik/wordlist", line4_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "white")
-        print_text_one_rect("As a result there are many non-official words in play.", line5_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "white")
-        print_text_one_rect("For this game the computer player will always play a", line6_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "white")
-        print_text_one_rect("highest scoring move, but is limited to one blank tile.", line7_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "white")
-        print_text_one_rect("CONTINUE", line8_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "white")
+        print_text_one_rect("This game doesn't use the official scrabble dictionary.", line2_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
+        print_text_one_rect("It uses the the open-source wordnik list found at:", line3_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
+        print_text_one_rect("https://github.com/wordnik/wordlist", line4_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
+        print_text_one_rect("As a result there are many non-official words in play.", line5_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
+        print_text_one_rect("For this game the computer player will always play a", line6_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
+        print_text_one_rect("highest scoring move, but is limited to one blank tile.", line7_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
+        print_text_one_rect("CONTINUE", line8_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "black")
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -140,8 +138,7 @@ def run_game():
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    game_running = False
-                    program_running = False
+                    pygame.quit()
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
@@ -189,6 +186,33 @@ def run_game():
 
             if end_game(player_pass, cpu_pass, player_tiles.tiles, cpu_tiles.tiles):
                 game_running = False
+
+        end_screen = True
+
+        while end_screen:
+            if board.cpu_score > board.player_score:
+                text = f"COMPUTER WINS WITH {board.cpu_score} POINTS!"
+            else:
+                text = f"YOU WIN WITH {board.player_score} POINTS!"
+
+            winner_rect = pygame.Rect(0.05 * WINDOW_WIDTH, 0.2 * WINDOW_WIDTH, 0.9 * WINDOW_WIDTH, 0.2 * BOARD_WIDTH)
+            main_menu_rect = pygame.Rect(0.4 * WINDOW_WIDTH, 0.2 * WINDOW_WIDTH + 0.225 * BOARD_WIDTH, 0.2 * WINDOW_WIDTH, 0.1 * BOARD_WIDTH)
+            pygame.draw.rect(screen, COLORS["dark_red"], winner_rect, border_radius=20)
+            pygame.draw.rect(screen, COLORS["black"], main_menu_rect, border_radius=20)
+
+            print_text_one_rect(text, winner_rect, pygame.font.Font(None, int(FONT_SIZE * 2)), screen, "black")
+            print_text_one_rect("Main Menu", main_menu_rect, pygame.font.Font(None, int(FONT_SIZE)), screen, "grey")
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if main_menu_rect.collidepoint(event.pos):
+                            end_screen = False
+
 
     pygame.quit()
 
