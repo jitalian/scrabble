@@ -1,12 +1,13 @@
-
 def fill_blanks(word):
+    """Returns a list of words where 1 letter of the given word is replaced with a blank "*" value"""
+
     word_list = []
     for i in range(len(word)):
-        word_list.append(word[:i] + "*" + word[i+1:])
+        word_list.append(word[:i] + "*" + word[i + 1:])
     return word_list
 
-def create_dict_with_blanks(filepath):
 
+def create_dict_with_blanks(filepath):
     words_set = set()
 
     with open('word_list.txt') as w:
@@ -17,6 +18,7 @@ def create_dict_with_blanks(filepath):
             else:
                 words_set.add(word)
 
+            # Limit the number of blanks for very long words to save space
             if len(word) < 10:
                 for word_with_blank in fill_blanks(word):
                     words_set.add(word_with_blank)

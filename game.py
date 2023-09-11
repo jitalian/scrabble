@@ -5,10 +5,14 @@ from board import GameBoard
 from rack import Rack
 from words import Trie
 from computer_player import ComputerPlayer
+import sys
 
 
 def end_game(player_skip, cpu_skip, player_rack, cpu_rack):
-    if player_skip == 2 and cpu_skip == 2:
+    """Checks for end of game conditions - Either player skipped turn twice or
+    either player has used all of their tiles. Returns true if game is over
+    """
+    if player_skip >= 2 or cpu_skip >= 2:
         return True
 
     if len(cpu_rack) == 0:
@@ -20,6 +24,7 @@ def end_game(player_skip, cpu_skip, player_rack, cpu_rack):
 
 
 def print_text_one_rect(text, rect, font, screen, color):
+    """Prints text on one pygame Rect object"""
     text = font.render(text, True, COLORS[color])
     text_rect = text.get_rect(center=rect.center)
     screen.blit(text, text_rect)
@@ -48,6 +53,7 @@ def welcome_screen(screen):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
@@ -59,6 +65,7 @@ def welcome_screen(screen):
 
                     if quit_rect.collidepoint(event.pos):
                         pygame.quit()
+                        sys.exit()
 
 
 def information_screen(screen):
@@ -83,7 +90,7 @@ def information_screen(screen):
         pygame.draw.rect(screen, COLORS['black'], line7_rect)
         pygame.draw.rect(screen, COLORS['blue1'], line8_rect, border_radius=15)
 
-        print_text_one_rect("WARNING:", line1_rect, pygame.font.Font(None, int(FONT_SIZE * 2)), screen, "red")
+        print_text_one_rect("Information:", line1_rect, pygame.font.Font(None, int(FONT_SIZE * 2)), screen, "red")
         print_text_one_rect("This game doesn't use the official scrabble dictionary.", line2_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
         print_text_one_rect("It uses the the open-source wordnik list found at:", line3_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
         print_text_one_rect("https://github.com/wordnik/wordlist", line4_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), screen, "dark_grey")
@@ -96,6 +103,7 @@ def information_screen(screen):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
@@ -104,6 +112,7 @@ def information_screen(screen):
 
 
 def run_game():
+
     pygame.init()
     pygame.display.set_caption("Justin's Scrabble")
     screen = pygame.display.set_mode((WINDOW_WIDTH, BOARD_WIDTH))
@@ -111,34 +120,32 @@ def run_game():
     information_screen(screen)
 
     program_running = True
-
     while program_running:
 
         welcome_screen(screen)
 
-        game_running = True
         active_rect = None
         player_move = True
 
         word_dictionary = Trie("blanks_dict.txt")
         game_tiles = TilesBag()
-
         board = GameBoard(screen, game_tiles, word_dictionary)
         player_tiles = Rack(game_tiles, screen, board, word_dictionary)
-        # player_tiles.tiles = ['H', 'A', 'T', '*', 'U', 'N', 'E']
         cpu_tiles = Rack(game_tiles, screen, board, word_dictionary)
-
         computer_player = ComputerPlayer(board, cpu_tiles, word_dictionary, game_tiles)
 
+        player_pass = 0
+        cpu_pass = 0
+
+        game_running = True
         while game_running:
 
             screen.fill("black")
-            player_pass = 0
-            cpu_pass = 0
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
+                    sys.exit()
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
@@ -152,10 +159,12 @@ def run_game():
                         if board.submit_rect.collidepoint(event.pos):
                             if player_tiles.submit_move():
                                 player_move *= -1
+                                player_pass = 0
 
                         if board.pass_turn_rect.collidepoint(event.pos):
                             player_pass += 1
                             player_move *= -1
+                            board.player_last_move_text = "TURN PASSED!"
 
                         if board.end_game_rect.collidepoint(event.pos):
                             game_running = False
@@ -181,8 +190,13 @@ def run_game():
 
             pygame.display.update()
             if player_move == -1 and player_tiles.tiles.count("_") != 7:
-                if not computer_player.cpu_move():
+                cpu_move = computer_player.cpu_move()
+                if not cpu_move:
                     cpu_pass += 1
+                    board.cpu_last_move_text = "TURN PASSED!"
+                else:
+                    cpu_pass = 0
+
                 player_move *= -1
 
             if end_game(player_pass, cpu_pass, player_tiles.tiles, cpu_tiles.tiles):
@@ -196,6 +210,11 @@ def run_game():
             else:
                 text = f"YOU WIN WITH {board.player_score} POINTS!"
 
+            screen.fill("black")
+            board.draw_board()
+            board.draw_rects()
+            board.print_text_all_rects(game_tiles)
+            player_tiles.draw_rack()
             winner_rect = pygame.Rect(0.05 * WINDOW_WIDTH, 0.2 * WINDOW_WIDTH, 0.9 * WINDOW_WIDTH, 0.2 * BOARD_WIDTH)
             main_menu_rect = pygame.Rect(0.4 * WINDOW_WIDTH, 0.2 * WINDOW_WIDTH + 0.225 * BOARD_WIDTH, 0.2 * WINDOW_WIDTH, 0.1 * BOARD_WIDTH)
             pygame.draw.rect(screen, COLORS["dark_red"], winner_rect, border_radius=20)
@@ -208,6 +227,7 @@ def run_game():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
+                    sys.exit()
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
@@ -215,6 +235,7 @@ def run_game():
                             end_screen = False
 
     pygame.quit()
+    sys.exit()
 
 
 if __name__ == "__main__":

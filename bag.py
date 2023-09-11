@@ -2,6 +2,7 @@ import random
 
 
 class TilesBag:
+    """Class storing tiles and point values for game."""
     def __init__(self):
         self.tiles = ["A"] * 9 + ["B"] * 2 + ["C"] * 2 + ["D"] * 4 + ["E"] * 12 + ["F"] * 2 + ["G"] * 3 + \
                      ["H"] * 2 + ["I"] * 9 + ["J"] * 1 + ["K"] * 1 + ["L"] * 4 + ["M"] * 2 + ["N"] * 6 + \
@@ -20,6 +21,8 @@ class TilesBag:
         # self.tiles = ["A"] * 2 + ["B"] * 2 + ["D"] * 2 + ["L"] * 2 + ["N"] * 2 + ["S"] * 2 + ["*"] * 2
 
     def get_random_tile(self, blank=True):
+        """Returns random tile from current tiles remaining. Blank parameter
+        restricts CPU player to only 1 blank on rack at once."""
         if len(self.tiles) == 0:
             return None
 
@@ -39,7 +42,9 @@ class TilesBag:
                         return random_tile
 
     def get_tile_points(self, tile):
+        """Returns points for given tile"""
         return self.points[tile]
 
     def get_tiles_remaining(self):
+        """Returns number of remaining tiles left in play"""
         return len(self.tiles)

@@ -3,6 +3,7 @@ import pygame
 
 
 class Rack:
+    """Class representing rack of tiles"""
     def __init__(self, game_tiles, screen, board, words):
         self.words = words
         self.screen = screen
@@ -14,6 +15,7 @@ class Rack:
         self.blank_prompt_text = "CHOOSE BLANK"
 
     def generate_tile_rects(self, reset=False):
+        """Generates Rect objects for current tile rack."""
         if reset is True:
             self.tile_rects = []
         x_pos = BOARD_WIDTH + PADDING + (1/45) * WINDOW_WIDTH
@@ -25,6 +27,8 @@ class Rack:
             x_pos += (tile_size + (WINDOW_WIDTH/400) * PADDING)
 
     def blank_tile_prompt(self):
+        """Prompts the user to select a blank tile. Returns the Rect object
+        associated with what the user selects"""
         prompt = True
         while prompt:
             self.screen.fill("black")
@@ -33,7 +37,7 @@ class Rack:
             self.board.print_text_all_rects(self.game_tiles)
             pygame.draw.rect(self.screen, COLORS['black'], self.board.blank_prompt_rect_background)
             pygame.draw.rect(self.screen, COLORS['red'], self.board.pick_blank_prompt, border_radius=15)
-            self.board.print_text_one_rect(self.blank_prompt_text, self.board.pick_blank_prompt)
+            self.board.print_text_one_rect(self.blank_prompt_text, self.board.pick_blank_prompt, self.board.tile_font)
             self.draw_rack()
             self.board.draw_blank_tile_rects()
 
@@ -56,6 +60,7 @@ class Rack:
             pygame.display.update()
 
     def draw_blank(self, tile, tile_rect):
+        """Draws given tile on given tile_rect onto the screen."""
         pygame.draw.rect(self.screen, COLORS['yellow'], tile_rect)
         text = self.board.tile_font.render(tile, True, COLORS['black'])
         text_rect = text.get_rect(center=tile_rect.center)
@@ -63,6 +68,8 @@ class Rack:
 
     @staticmethod
     def draw_tile(screen, tile, tile_rect, tile_font, score_font, bag):
+        """Draws given tile and tile points on the screen."""
+
         pygame.draw.rect(screen, COLORS['yellow'], tile_rect)
 
         if tile.isupper():
@@ -84,6 +91,7 @@ class Rack:
             screen.blit(text, text_rect)
 
     def draw_rack(self):
+        """Draws the players current rack on the screen."""
         rack_rect = pygame.Rect(BOARD_WIDTH + 15, (7 / 8) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 30, 1.5 * BOARD_WIDTH / SQUARES)
         pygame.draw.rect(self.screen, COLORS['dark_grey'], rack_rect, border_radius=15)
         tile_font = pygame.font.Font(None, FONT_SIZE)
@@ -93,6 +101,7 @@ class Rack:
                 self.draw_tile(self.screen, self.tiles[i], self.tile_rects[i], tile_font, score_font, self.game_tiles)
 
     def exchange_tiles(self):
+        """Exchanges the tiles and reset tile rects to their default positions."""
         for tile in self.tiles:
             self.game_tiles.tiles.append(tile)
 
@@ -100,6 +109,8 @@ class Rack:
         self.generate_tile_rects(reset=True)
 
     def get_move_indices(self):
+        """Determines which tiles were moved and what board space they were moved to.
+        Returns a list of [row, col, rack_index, tile]."""
         tiles_moved = []
         blank_chosen = False
         for i in range(len(self.tiles)):
@@ -116,7 +127,8 @@ class Rack:
         return tiles_moved
 
     def submit_move(self):
-
+        """Submits the current move. The board class checks the validity. Returns true if the move was valid
+        and false otherwise."""
         move_indices = self.get_move_indices()
 
         valid_move = self.board.check_valid_move(move_indices)

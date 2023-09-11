@@ -6,6 +6,7 @@ import string
 
 
 class GameBoard:
+    """Class for storing game board"""
     def __init__(self, screen, bag, dictionary):
 
         self.dictionary = dictionary
@@ -56,7 +57,7 @@ class GameBoard:
         self.cpu_last_move_text = "CPU:"
 
     def generate_bonus_matrix(self):
-
+        """Generates a matrix containing bonus values and the colors they should be."""
         for i in range(SQUARES):
             for j in range(SQUARES):
                 if (i, j) in self.triple_word_squares:
@@ -71,7 +72,7 @@ class GameBoard:
                     self.bonus_matrix[i][j] = ("ST", "pink")
 
     def create_blank_tile_rects(self):
-
+        """Generates tile Rect objects for tile locations on the board."""
         for i in range(SQUARES):
             row = []
             for j in range(SQUARES):
@@ -92,12 +93,14 @@ class GameBoard:
             self.blank_tile_prompt_rects.append(row)
 
     def draw_board_space(self, color, rect, text):
+        """Draws a single tile space on the board"""
         pygame.draw.rect(self.screen, COLORS[color], rect)
         text = self.tile_font.render(text, True, COLORS['black'])
         text_rect = text.get_rect(center=rect.center)
         self.screen.blit(text, text_rect)
 
     def draw_board(self):
+        """Draws entire board on the screen."""
         for i in range(SQUARES):
             for j in range(SQUARES):
                 if self.current_board[i][j] != "_":
@@ -109,6 +112,7 @@ class GameBoard:
                         pygame.draw.rect(self.screen, COLORS['light_brown'], self.board[i][j])
 
     def draw_blank_tile_rects(self):
+        """Draws blank tile Rect objects to the screen"""
         index = 0
         for i in range(6):
             for j in range(5):
@@ -118,6 +122,7 @@ class GameBoard:
                     return
 
     def draw_rects(self):
+        """Draws information and user button rectangles to the screen."""
         pygame.draw.rect(self.screen, COLORS['grey'], self.player_score_rect, border_radius=15)
         pygame.draw.rect(self.screen, COLORS['grey'], self.cpu_score_rect, border_radius=15)
         pygame.draw.rect(self.screen, COLORS['grey'], self.submit_rect, border_radius=15)
@@ -130,11 +135,13 @@ class GameBoard:
         pygame.draw.rect(self.screen, COLORS['dark_grey'], self.player_move_rect, border_radius=15)
 
     def print_text_one_rect(self, text, rect, font):
+        """Prints text in one rectangle"""
         text = font.render(text, True, COLORS['black'])
         text_rect = text.get_rect(center=rect.center)
         self.screen.blit(text, text_rect)
 
     def print_text_all_rects(self, game_tiles):
+        """Prints text for information and user button rectangles on the screen."""
         self.print_text_one_rect(f"YOU: {self.player_score}", self.player_score_rect, self.tile_font)
         self.print_text_one_rect(f"CPU: {self.cpu_score}", self.cpu_score_rect, self.tile_font)
         self.print_text_one_rect("SUBMIT WORD", self.submit_rect, self.tile_font)
@@ -147,7 +154,8 @@ class GameBoard:
         self.print_text_one_rect(self.player_last_move_text, self.player_move_rect, pygame.font.Font(None, int(FONT_SIZE * 0.9)))
 
     def read_sub_word(self, row, col, current_board, letter):
-
+        """Reads a word generated perpendicular to the main word being played. Return the
+        word and score if it is valid and None with a score of 0 otherwise."""
         sub_word = letter
 
         multiplier = self.get_word_bonus(row, col, self.bonus_matrix)
@@ -174,6 +182,7 @@ class GameBoard:
 
     @staticmethod
     def get_letter_bonus(row, col, bonus_matrix):
+        """Returns letter bonus."""
         if bonus_matrix[row][col][0] == "DL":
             return 2
         elif bonus_matrix[row][col][0] == "TL":
@@ -183,6 +192,7 @@ class GameBoard:
 
     @staticmethod
     def get_word_bonus(row, col, bonus_matrix):
+        """Returns word multiplier bonus."""
         if bonus_matrix[row][col][0] == "DW" or bonus_matrix[row][col][0] == "ST":
             return 2
         elif bonus_matrix[row][col][0] == "TW":
@@ -191,7 +201,8 @@ class GameBoard:
             return 1
 
     def read_word(self, tiles_moved, horizontal):
-
+        """Reads main word and sub words and calculates overall move score. Returns the word and
+        score if the move is valid and False in place of the word otherwise."""
         move_score = 0
         main_word_score = 0
         sub_word_scores = []
@@ -262,18 +273,23 @@ class GameBoard:
 
     @staticmethod
     def check_first_move_placement(tiles_moved):
+        """Checks to see if starting move intersects with starting square. Returns
+        true if it does and false otherwise."""
         for tile in tiles_moved:
             if (tile[0], tile[1]) == (7, 7):
                 return True
         return False
 
     def check_active_tile_placement(self, tiles_moved):
+        """Checks to see if word connects with at least 1 active square. Returns true
+        if it does, false otherwise."""
         for tile in tiles_moved:
             if self.active_tiles[tile[0]][tile[1]]:
                 return True
         return False
 
     def check_valid_move(self, tiles_moved):
+        """Checks if given move is valid. Returns true if it is and false otherwise."""
 
         # First move should intersect "S" square
         if self.first_move:
@@ -325,6 +341,7 @@ class GameBoard:
         return True
 
     def update_active_tiles(self, row, col):
+        """Updates active board locations."""
         indices_to_update = [(row, col), (row, col - 1), (row - 1, col), (row, col + 1), (row + 1, col)]
         for index in indices_to_update:
             if index[0] >= SQUARES or index[0] < 0 or index[1] >= SQUARES or index[1] < 0:
