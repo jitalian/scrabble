@@ -17,9 +17,6 @@ class TilesBag:
                        "l": 0, "m": 0, "n": 0, "o": 0, "p": 0, "q": 0, "r": 0, "s": 0, "t": 0, "u": 0,
                        "v": 0, "w": 0, "x": 0, "y": 0, "z": 0}
 
-        # Short game for testing
-        # self.tiles = ["A"] * 2 + ["B"] * 2 + ["D"] * 2 + ["L"] * 2 + ["N"] * 2 + ["S"] * 2 + ["*"] * 2
-
     def get_random_tile(self, blank=True):
         """Returns random tile from current tiles remaining. Blank parameter
         restricts CPU player to only 1 blank on rack at once."""

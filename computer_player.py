@@ -7,9 +7,11 @@ import copy
 
 class ComputerPlayer:
     """Class for CPU player."""
-    def __init__(self, board, rack, dictionary, bag):
+
+    def __init__(self, board, game_tiles, dictionary, bag):
         self.board = board
-        self.rack = rack
+        self.game_tiles = game_tiles
+        self.tiles = [self.game_tiles.get_random_tile() for _ in range(7)]
         self.bag = bag
         self.dictionary = dictionary
         self.playable_board_locations = None
@@ -19,9 +21,9 @@ class ComputerPlayer:
         self.vertical_score_lookup = [[{} for _ in range(SQUARES)] for _ in range(SQUARES)]
         self.blanks_values_dict_horizontal = {}
         self.blanks_values_dict_vertical = {}
-        self.blank_chosen = "A"
+        self.blank_chosen = ""
 
-    def get_active_tiles(self):
+    def get_active_board_locations(self):
         """Updates set of board locations adjacent (but not diagonal) to tiles already on the board."""
         self.playable_board_locations = set()
         for i in range(SQUARES):
@@ -29,13 +31,13 @@ class ComputerPlayer:
                 if self.board.active_tiles[i][j] and self.board.current_board[i][j] == "_":
                     self.playable_board_locations.add((i, j))
 
-    def check_allowed_vertical(self, row, col, tile):
+    def check_tile_allowed_vertical(self, row, col, tile):
         """Checks if single tile played as part of a vertical word is allowed by checking
         horizontal word formed. If horizontal word is formed, tile and score are added
         to lookup matrix. Returns true if tile can be played, false otherwise"""
         word = tile
         next_col = col + 1
-        word_col = col
+        starting_col = col
 
         word_multiplier = self.board.get_word_bonus(row, col, self.board.bonus_matrix)
         letter_multiplier = self.board.get_letter_bonus(row, col, self.board.bonus_matrix)
@@ -61,24 +63,24 @@ class ComputerPlayer:
             return True
 
         if self.dictionary.find_word(word.upper()):
-            self.vertical_score_lookup[row][word_col][tile] = score * word_multiplier
+            self.vertical_score_lookup[row][starting_col][tile] = score * word_multiplier
             # Game dictionary contains words with blanks designated, but specific value is not known yet
             if tile == "*":
-                self.blanks_values_dict_vertical[(row, word_col)] = set()
+                self.blanks_values_dict_vertical[(row, starting_col)] = set()
                 for letter in string.ascii_lowercase:
                     if self.dictionary.find_word(word.replace("*", letter).upper()):
-                        self.blanks_values_dict_vertical[(row, word_col)].add(letter)
+                        self.blanks_values_dict_vertical[(row, starting_col)].add(letter)
             return True
-        else:
-            return False
 
-    def check_allowed_horizontal(self, row, col, tile):
+        return False
+
+    def check_tile_allowed_horizontal(self, row, col, tile):
         """Checks if single tile played as part of a vertical word is allowed by checking
         horizontal word formed. If horizontal word is formed, tile and score are added
         to lookup matrix. Returns true if tile can be played, false otherwise"""
         word = tile
         next_row = row + 1
-        word_row = row
+        starting_row = row
 
         word_multiplier = self.board.get_word_bonus(row, col, self.board.bonus_matrix)
         letter_multiplier = self.board.get_letter_bonus(row, col, self.board.bonus_matrix)
@@ -104,27 +106,27 @@ class ComputerPlayer:
             return True
 
         if self.dictionary.find_word(word.upper()):
-            self.horizontal_score_lookup[word_row][col][tile] = score * word_multiplier
+            self.horizontal_score_lookup[starting_row][col][tile] = score * word_multiplier
             # Game dictionary contains words with blanks designated, but specific value is not known yet
             if tile == "*":
-                self.blanks_values_dict_horizontal[(word_row, col)] = set()
+                self.blanks_values_dict_horizontal[(starting_row, col)] = set()
                 for letter in string.ascii_lowercase:
                     if self.dictionary.find_word(word.replace("*", letter).upper()):
-                        self.blanks_values_dict_horizontal[(word_row, col)].add(letter)
+                        self.blanks_values_dict_horizontal[(starting_row, col)].add(letter)
             return True
-        else:
-            return False
+
+        return False
 
     def get_allowed_tiles(self):
         """Creates horizontal and vertical dictionaries containing sets of rack tiles for each board location and
         updates these dictionaries based on whether each tile can legally be played at each location."""
-        self.allowed_tiles_horizontal_dict = {location: set(self.rack.tiles) for location in self.playable_board_locations}
-        self.allowed_tiles_vertical_dict = {location: set(self.rack.tiles) for location in self.playable_board_locations}
+        self.allowed_tiles_horizontal_dict = {location: set(self.tiles) for location in self.playable_board_locations}
+        self.allowed_tiles_vertical_dict = {location: set(self.tiles) for location in self.playable_board_locations}
         for location in self.playable_board_locations:
-            for tile in set(self.rack.tiles):
-                if not self.check_allowed_vertical(location[0], location[1], tile):
+            for tile in set(self.tiles):
+                if not self.check_tile_allowed_vertical(location[0], location[1], tile):
                     self.allowed_tiles_vertical_dict[location].remove(tile)
-                if not self.check_allowed_horizontal(location[0], location[1], tile):
+                if not self.check_tile_allowed_horizontal(location[0], location[1], tile):
                     self.allowed_tiles_horizontal_dict[location].remove(tile)
 
     def word_from_rack_horizontal(self, word, row, col, rack_dict):
@@ -163,7 +165,7 @@ class ComputerPlayer:
                 row += 1
         return True
 
-    def get_set_lookup_matrix(self, horizontal):
+    def get_allowed_letters_matrix(self, horizontal):
         """Creates lookup matrix with a set of possible tiles for each location based on horizontal/vertical word.
         Returns the generated matrix."""
         set_lookup_matrix = []
@@ -178,7 +180,7 @@ class ComputerPlayer:
                     else:
                         row.append(self.allowed_tiles_vertical_dict[(i, j)])
                 else:
-                    row.append(set(self.rack.tiles))
+                    row.append(set(self.tiles))
             set_lookup_matrix.append(row)
 
         return set_lookup_matrix
@@ -188,7 +190,7 @@ class ComputerPlayer:
         tiles will be placed. Returns word lane and starting column if it is valid, false and starting column otherwise."""
         word_lane = []
         tiles_placed = 0
-        valid_lane = 0
+        valid_placement = False
         start_col = col
 
         # Word will connect to existing tiles to the left on current board
@@ -200,7 +202,7 @@ class ComputerPlayer:
 
         while tiles_placed < lane_length and col < SQUARES:
             if (row, col) in self.playable_board_locations:
-                valid_lane = 1
+                valid_placement = True
 
             if self.board.current_board[row][col] != "_":
                 word_lane.append({self.board.current_board[row][col].upper()})
@@ -217,7 +219,7 @@ class ComputerPlayer:
                         col += 1
 
         # Length is being restricted for efficiency because plays forming very long words using existing words on board is rare.
-        if tiles_placed != lane_length or set() in word_lane or len(word_lane) > 9 or not valid_lane:
+        if tiles_placed != lane_length or set() in word_lane or len(word_lane) > 9 or not valid_placement:
             return False, start_col
 
         return word_lane, start_col
@@ -227,7 +229,7 @@ class ComputerPlayer:
         tiles will be placed. Returns word lane and starting column if it is valid, false and starting column otherwise."""
         word_lane = []
         tiles_placed = 0
-        valid_lane = 0
+        valid_placement = False
         start_row = row
 
         # Word will connect to existing tiles above on current board
@@ -239,7 +241,7 @@ class ComputerPlayer:
 
         while tiles_placed < lane_length and row < SQUARES:
             if (row, col) in self.playable_board_locations:
-                valid_lane = 1
+                valid_placement = True
 
             if self.board.current_board[row][col] != "_":
                 word_lane.append({self.board.current_board[row][col].upper()})
@@ -256,10 +258,22 @@ class ComputerPlayer:
                         row += 1
 
         # Length is being restricted for efficiency because plays forming very long words using existing words on board is rare.
-        if tiles_placed != lane_length or set() in word_lane or len(word_lane) > 9 or not valid_lane:
+        if tiles_placed != lane_length or set() in word_lane or len(word_lane) > 9 or not valid_placement:
             return False, start_row
 
         return word_lane, start_row
+
+    @staticmethod
+    def tabulate_score(main_word_score, multiplier, sub_word_scores, tiles_placed):
+
+        move_score = (main_word_score * multiplier)
+        for score in sub_word_scores:
+            move_score += score
+
+        if tiles_placed == 7:
+            move_score += 50
+
+        return move_score
 
     def calculate_word_score_horizontal(self, location, word):
         """Calculates move score for horizontally placed word and returns the word, the score and the blank value. If a
@@ -308,15 +322,7 @@ class ComputerPlayer:
                 col += 1
                 tiles_placed += 1
 
-        main_word_score *= multiplier
-        move_score = main_word_score
-        for score in sub_word_scores:
-            move_score += score
-
-        if tiles_placed == 7:
-            move_score += 50
-
-        return word, move_score, blank_value
+        return word, self.tabulate_score(main_word_score, multiplier, sub_word_scores, tiles_placed), blank_value
 
     def calculate_word_score_vertical(self, location, word):
         """Calculates move score for vertically placed word and returns the word, the score and the blank value. If a
@@ -365,15 +371,7 @@ class ComputerPlayer:
                 row += 1
                 tiles_placed += 1
 
-        main_word_score *= multiplier
-        move_score = main_word_score
-        for score in sub_word_scores:
-            move_score += score
-
-        if tiles_placed == 7:
-            move_score += 50
-
-        return word, move_score, blank_value
+        return word, self.tabulate_score(main_word_score, multiplier, sub_word_scores, tiles_placed), blank_value
 
     def play_best_move_horizontal(self, best_move):
         """Plays a horizontal move and updates the current board, score, and players rack. Also determines what blank value
@@ -388,17 +386,17 @@ class ComputerPlayer:
                 col += 1
             elif self.board.current_board[row][col] == "_" and letter != "*" and not letter.islower():
                 self.board.current_board[row][col] = letter
-                self.board.update_active_tiles(row, col)
-                self.rack.tiles.remove(letter)
+                self.board.update_active_board_locations(row, col)
+                self.tiles.remove(letter)
                 tiles_to_replace += 1
                 col += 1
             else:
                 # Lowercase letters correspond to blanks already determined in calculate_word_score function because
                 # they created additional perpendicular words
-                self.rack.tiles.remove("*")
+                self.tiles.remove("*")
                 if letter != "*":
                     self.board.current_board[row][col] = letter
-                    self.board.update_active_tiles(row, col)
+                    self.board.update_active_board_locations(row, col)
                     tiles_to_replace += 1
                     col += 1
                 else:
@@ -409,7 +407,7 @@ class ComputerPlayer:
                         if self.dictionary.find_word(best_move[1].replace("*", blank_letter).upper()):
                             self.board.current_board[row][col] = blank_letter
                             self.blank_chosen = blank_letter
-                            self.board.update_active_tiles(row, col)
+                            self.board.update_active_board_locations(row, col)
                             tiles_to_replace += 1
                             letter_found = True
                             col += 1
@@ -418,13 +416,13 @@ class ComputerPlayer:
                             break
 
         for i in range(tiles_to_replace):
-            if "*" in self.rack.tiles:
+            if "*" in self.tiles:
                 new_tile = self.bag.get_random_tile(False)
             else:
                 new_tile = self.bag.get_random_tile()
 
             if new_tile is not None:
-                self.rack.tiles.append(new_tile)
+                self.tiles.append(new_tile)
 
     def play_best_move_vertical(self, best_move):
         """Plays a vertical move and updates the current board, score, and players rack. Also determines what blank value
@@ -439,17 +437,17 @@ class ComputerPlayer:
                 row += 1
             elif self.board.current_board[row][col] == "_" and letter != "*" and not letter.islower():
                 self.board.current_board[row][col] = letter
-                self.board.update_active_tiles(row, col)
-                self.rack.tiles.remove(letter)
+                self.board.update_active_board_locations(row, col)
+                self.tiles.remove(letter)
                 tiles_to_replace += 1
                 row += 1
             else:
                 # Lowercase letters correspond to blanks already determined in calculate_word_score function because
                 # they created additional perpendicular words
-                self.rack.tiles.remove("*")
+                self.tiles.remove("*")
                 if letter != "*":
                     self.board.current_board[row][col] = letter
-                    self.board.update_active_tiles(row, col)
+                    self.board.update_active_board_locations(row, col)
                     tiles_to_replace += 1
                     row += 1
                 else:
@@ -460,7 +458,7 @@ class ComputerPlayer:
                         if self.dictionary.find_word(best_move[1].replace("*", blank_letter).upper()):
                             self.board.current_board[row][col] = blank_letter
                             self.blank_chosen = blank_letter
-                            self.board.update_active_tiles(row, col)
+                            self.board.update_active_board_locations(row, col)
                             tiles_to_replace += 1
                             letter_found = True
                             row += 1
@@ -469,15 +467,15 @@ class ComputerPlayer:
                             break
 
         for i in range(tiles_to_replace):
-            if "*" in self.rack.tiles:
+            if "*" in self.tiles:
                 new_tile = self.bag.get_random_tile(False)
             else:
                 new_tile = self.bag.get_random_tile()
 
             if new_tile is not None:
-                self.rack.tiles.append(new_tile)
+                self.tiles.append(new_tile)
 
-    def get_one_letter_move(self, row, col, tile, horizontal_matrix, vertical_matrix):
+    def check_one_letter_move(self, row, col, tile, horizontal_matrix, vertical_matrix):
         """Determines if single tile can be placed at given row and column as a valid move. Calculates the score and returns
         [(row, col), tile, score] if the move is valid and false otherwise."""
 
@@ -516,15 +514,17 @@ class ComputerPlayer:
             else:
                 return False
 
-    def play_one_letter(self, move):
+    def play_one_letter_move(self, move):
         """Plays one letter and updates current board and score."""
 
+        row, col = move[0][0], move[0][1]
         self.board.cpu_score += move[2]
-        self.board.current_board[move[0][0]][move[0][1]] = move[1]
-        self.rack.tiles.remove(move[1])
+        self.board.current_board[row][col] = move[1]
+        self.board.update_active_board_locations(row, col)
+        self.tiles.remove(move[1])
         new_tile = self.bag.get_random_tile(False)
         if new_tile is not None:
-            self.rack.tiles.append(new_tile)
+            self.tiles.append(new_tile)
 
     def cpu_move(self):
         """Performs 1 turn of the CPU player. Creates word lanes for every vertical and horizontal move possible and
@@ -535,26 +535,26 @@ class ComputerPlayer:
         best_move_vertical = [0, 0, 0]  # [location, word, score]
         best_move_one_tile = [0, 0, 0]  # [location, word, score]
 
-        rack_counts_dict = {tile: self.rack.tiles.count(tile) for tile in self.rack.tiles}
+        rack_counts_dict = {tile: self.tiles.count(tile) for tile in self.tiles}
 
-        self.get_active_tiles()
+        self.get_active_board_locations()
         self.get_allowed_tiles()
 
-        matrix_horizontal = self.get_set_lookup_matrix(True)
-        matrix_vertical = self.get_set_lookup_matrix(False)
+        matrix_horizontal = self.get_allowed_letters_matrix(True)
+        matrix_vertical = self.get_allowed_letters_matrix(False)
 
         word_set_horizontal = set()
         word_set_vertical = set()
 
         for row in range(SQUARES):
             for col in range(SQUARES):
-                for tile in self.rack.tiles:
+                for tile in self.tiles:
                     if self.board.current_board[row][col] == "_":
-                        move = self.get_one_letter_move(row, col, tile, matrix_horizontal, matrix_vertical)
-                        if move is not False:
-                            if move[2] > best_move_one_tile[2]:
-                                best_move_one_tile = move
-                for i in range(2, len(self.rack.tiles) + 1, 1):
+                        move_one_letter = self.check_one_letter_move(row, col, tile, matrix_horizontal, matrix_vertical)
+                        if move_one_letter is not False:
+                            if move_one_letter[2] > best_move_one_tile[2]:
+                                best_move_one_tile = move_one_letter
+                for i in range(2, len(self.tiles) + 1, 1):
                     lane_horizontal, start_col = self.get_word_lane_horizontal(row, col, i, matrix_horizontal)
                     lane_vertical, start_row = self.get_word_lane_vertical(row, col, i, matrix_vertical)
                     if lane_horizontal is not False:
@@ -574,13 +574,6 @@ class ComputerPlayer:
                 if score > best_move_vertical[2]:
                     best_move_vertical = [location, word, score]
 
-        # print("BEST MOVE VERTICAL: ", best_move_vertical)
-        # print("BEST MOVE HORIZONTAL: ", best_move_horizontal)
-        # print("BEST MOVE ONE TILE: ", best_move_one_tile)
-        # print("RACK BEFORE: ", self.rack.tiles)
-        # print("BOARD BEFORE:")
-        # print(self.board.current_board)
-
         if len(word_set_vertical) == 0 and len(word_set_horizontal) == 0 and best_move_one_tile == [0, 0, 0]:
             return False
 
@@ -596,9 +589,12 @@ class ComputerPlayer:
             self.board.cpu_last_move_text = f"CPU: {word} for {best_move_horizontal[2]}!"
             return best_move_horizontal
         else:
-            self.play_one_letter(best_move_one_tile)
-            self.board.cpu_last_move_text = f"CPU: Letter {str(best_move_one_tile[1]).lower()} for {best_move_one_tile[2]}!"
-            return best_move_one_tile
+            if best_move_one_tile[0] == 0:
+                return False
+            else:
+                self.play_one_letter_move(best_move_one_tile)
+                self.board.cpu_last_move_text = f"CPU: Letter {str(best_move_one_tile[1]).lower()} for {best_move_one_tile[2]}!"
+                return best_move_one_tile
 
     def find_words(self, letter_sets, rack_dict, row, col, horizontal):
         """Determines every single possible word given a list of letter sets. Returns set of possible words."""

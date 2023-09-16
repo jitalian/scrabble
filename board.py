@@ -1,17 +1,19 @@
 from constants import BOARD_WIDTH, WINDOW_WIDTH, SQUARES, PADDING, FONT_SIZE, COLORS
 import pygame
-from rack import Rack
+from player_rack import PlayerRack
 import numpy
 import string
+import sys
 
 
 class GameBoard:
     """Class for storing game board"""
-    def __init__(self, screen, bag, dictionary):
+
+    def __init__(self, screen, game_tiles=None, dictionary=None):
 
         self.dictionary = dictionary
         self.first_move = True
-        self.bag = bag
+        self.game_tiles = game_tiles
         self.screen = screen
         self.triple_word_squares = {(0, 0), (0, 7), (0, 14), (7, 0), (7, 14), (14, 0), (14, 7), (14, 14)}
         self.triple_letter_squares = {(1, 5), (1, 9), (5, 1), (5, 5), (5, 9), (5, 13), (9, 1), (9, 5),
@@ -32,7 +34,7 @@ class GameBoard:
         self.current_board = numpy.array([["_" for _ in range(SQUARES)] for _ in range(SQUARES)])
         self.board = []
         self.blank_tile_prompt_rects = []
-        self.create_blank_tile_rects()
+        self.create_board_location_tile_rects()
 
         self.tile_font = pygame.font.Font(None, FONT_SIZE)
         self.score_font = pygame.font.Font(None, int(FONT_SIZE / 2))
@@ -45,8 +47,6 @@ class GameBoard:
         self.reset_rack_rect = pygame.Rect(BOARD_WIDTH + 25, (3 / 5) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.pass_turn_rect = pygame.Rect(BOARD_WIDTH + 25, (7 / 10) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.submit_rect = pygame.Rect(BOARD_WIDTH + 25, (4 / 5) * BOARD_WIDTH - 25, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
-        self.blank_prompt_rect_background = pygame.Rect((2 / 3) * WINDOW_WIDTH, (1 / 6) * BOARD_WIDTH, (1 / 2) * BOARD_WIDTH, (3/4) * BOARD_WIDTH)
-        self.pick_blank_prompt = pygame.Rect(BOARD_WIDTH + 25, (1 / 4) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.cpu_move_rect = pygame.Rect(BOARD_WIDTH + 25, (2 / 10) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
         self.player_move_rect = pygame.Rect(BOARD_WIDTH + 25, (9 / 32) * BOARD_WIDTH, (1 / 3) * WINDOW_WIDTH - 50, BOARD_WIDTH / SQUARES)
 
@@ -55,6 +55,132 @@ class GameBoard:
 
         self.player_last_move_text = "You:"
         self.cpu_last_move_text = "CPU:"
+
+    def information_screen(self):
+        line1_rect = pygame.Rect(0, 0, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
+        line2_rect = pygame.Rect(0, 0.125 * BOARD_WIDTH, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
+        line3_rect = pygame.Rect(0, 0.25 * BOARD_WIDTH, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
+        line4_rect = pygame.Rect(0, 0.375 * BOARD_WIDTH, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
+        line5_rect = pygame.Rect(0, 0.5 * BOARD_WIDTH, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
+        line6_rect = pygame.Rect(0, 0.625 * BOARD_WIDTH, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
+        line7_rect = pygame.Rect(0, 0.75 * BOARD_WIDTH, WINDOW_WIDTH, 0.125 * BOARD_WIDTH)
+        line8_rect = pygame.Rect(0.35 * WINDOW_WIDTH, 0.875 * BOARD_WIDTH, 0.3 * WINDOW_WIDTH, 0.1 * BOARD_WIDTH)
+
+        information = True
+        while information:
+            self.screen.fill("black")
+            pygame.draw.rect(self.screen, COLORS['black'], line1_rect)
+            pygame.draw.rect(self.screen, COLORS['black'], line2_rect)
+            pygame.draw.rect(self.screen, COLORS['black'], line3_rect)
+            pygame.draw.rect(self.screen, COLORS['black'], line4_rect)
+            pygame.draw.rect(self.screen, COLORS['black'], line5_rect)
+            pygame.draw.rect(self.screen, COLORS['black'], line6_rect)
+            pygame.draw.rect(self.screen, COLORS['black'], line7_rect)
+            pygame.draw.rect(self.screen, COLORS['blue1'], line8_rect, border_radius=15)
+
+            self.print_text_one_rect("Information:", line1_rect, pygame.font.Font(None, int(FONT_SIZE * 2)), "red")
+            self.print_text_one_rect("This game doesn't use the official scrabble dictionary.", line2_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), "dark_grey")
+            self.print_text_one_rect("It uses the the open-source wordnik list found at:", line3_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), "dark_grey")
+            self.print_text_one_rect("https://github.com/wordnik/wordlist", line4_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), "dark_grey")
+            self.print_text_one_rect("As a result there are many non-official words in play.", line5_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), "dark_grey")
+            self.print_text_one_rect("For this game the computer player will always play a", line6_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), "dark_grey")
+            self.print_text_one_rect("highest scoring move, but is limited to one blank tile.", line7_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), "dark_grey")
+            self.print_text_one_rect("CONTINUE", line8_rect, pygame.font.Font(None, int(FONT_SIZE * 1.5)), "black")
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if line8_rect.collidepoint(event.pos):
+                            information = False
+
+    def welcome_screen(self):
+
+        scrabble_rect = pygame.Rect(0.125 * WINDOW_WIDTH, 0.15 * BOARD_WIDTH, 0.75 * WINDOW_WIDTH, 0.4 * BOARD_WIDTH)
+        quit_rect = pygame.Rect(0.125 * WINDOW_WIDTH, 0.6 * BOARD_WIDTH, 0.35 * WINDOW_WIDTH, 0.2 * BOARD_WIDTH)
+        begin_game_rect = pygame.Rect(0.525 * WINDOW_WIDTH, 0.6 * BOARD_WIDTH, 0.35 * WINDOW_WIDTH, 0.2 * BOARD_WIDTH)
+        loading_rect = pygame.Rect(0.125 * WINDOW_WIDTH, 0.15 * BOARD_WIDTH, 0.75 * WINDOW_WIDTH, 0.4 * BOARD_WIDTH)
+
+        welcome = True
+
+        while welcome:
+            self.screen.fill("black")
+            pygame.draw.rect(self.screen, COLORS['dark_grey'], scrabble_rect, border_radius=10)
+            pygame.draw.rect(self.screen, COLORS['dark_grey'], quit_rect, border_radius=10)
+            pygame.draw.rect(self.screen, COLORS['dark_grey'], begin_game_rect, border_radius=10)
+
+            self.print_text_one_rect("SCRABBLE", scrabble_rect, pygame.font.Font(None, int(FONT_SIZE * 5)), "dark_red")
+            self.print_text_one_rect("QUIT GAME", quit_rect, pygame.font.Font(None, int(FONT_SIZE * 2)), "black")
+            self.print_text_one_rect("BEGIN GAME", begin_game_rect, pygame.font.Font(None, int(FONT_SIZE * 2)), "black")
+
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if begin_game_rect.collidepoint(event.pos):
+                            welcome = False
+                            self.screen.fill("black")
+                            self.print_text_one_rect("LOADING...", loading_rect, pygame.font.Font(None, int(FONT_SIZE * 5)), "dark_red")
+                            pygame.display.update()
+
+                        if quit_rect.collidepoint(event.pos):
+                            pygame.quit()
+                            sys.exit()
+
+    @staticmethod
+    def check_end_game(player_skip, cpu_skip, player_rack, cpu_rack):
+        """Checks for end of game conditions - Either player skipped turn twice or
+        either player has used all of their tiles. Returns true if game is over
+        """
+        if player_skip >= 2 and cpu_skip >= 2:
+            return True
+
+        if len(cpu_rack) == 0:
+            return True
+
+        count_empty = player_rack.count("_")
+        if count_empty == 7:
+            return True
+
+    def end_screen(self, player_tiles):
+        end_screen = True
+        while end_screen:
+            if self.cpu_score > self.player_score:
+                text = f"COMPUTER WINS WITH {self.cpu_score} POINTS!"
+            else:
+                text = f"YOU WIN WITH {self.player_score} POINTS!"
+
+            self.screen.fill("black")
+            self.draw_board()
+            self.draw_game_panel()
+            player_tiles.draw_rack()
+            winner_rect = pygame.Rect(0.05 * WINDOW_WIDTH, 0.2 * WINDOW_WIDTH, 0.9 * WINDOW_WIDTH, 0.2 * BOARD_WIDTH)
+            main_menu_rect = pygame.Rect(0.4 * WINDOW_WIDTH, 0.2 * WINDOW_WIDTH + 0.225 * BOARD_WIDTH, 0.2 * WINDOW_WIDTH, 0.1 * BOARD_WIDTH)
+            pygame.draw.rect(self.screen, COLORS["dark_red"], winner_rect, border_radius=20)
+            pygame.draw.rect(self.screen, COLORS["black"], main_menu_rect, border_radius=20)
+
+            self.print_text_one_rect(text, winner_rect, pygame.font.Font(None, int(FONT_SIZE * 2)), "black")
+            self.print_text_one_rect("Main Menu", main_menu_rect, pygame.font.Font(None, int(FONT_SIZE)), "grey")
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if main_menu_rect.collidepoint(event.pos):
+                            end_screen = False
 
     def generate_bonus_matrix(self):
         """Generates a matrix containing bonus values and the colors they should be."""
@@ -71,7 +197,7 @@ class GameBoard:
                 if (i, j) == (7, 7):
                     self.bonus_matrix[i][j] = ("ST", "pink")
 
-    def create_blank_tile_rects(self):
+    def create_board_location_tile_rects(self):
         """Generates tile Rect objects for tile locations on the board."""
         for i in range(SQUARES):
             row = []
@@ -80,6 +206,7 @@ class GameBoard:
                 row.append(letter_rect)
             self.board.append(row)
 
+        # These rects are drawing the blank tile prompt after player places and submits word with blank tile
         index = 0
         for i in range(6):
             row = []
@@ -104,15 +231,16 @@ class GameBoard:
         for i in range(SQUARES):
             for j in range(SQUARES):
                 if self.current_board[i][j] != "_":
-                    Rack.draw_tile(self.screen, self.current_board[i][j], self.board[i][j], self.tile_font, self.score_font, self.bag)
+                    self.draw_tile(self.current_board[i][j], self.board[i][j])
                 else:
                     if self.bonus_matrix[i][j][0] != "_":
                         self.draw_board_space(self.bonus_matrix[i][j][1], self.board[i][j], self.bonus_matrix[i][j][0])
                     else:
                         pygame.draw.rect(self.screen, COLORS['light_brown'], self.board[i][j])
 
-    def draw_blank_tile_rects(self):
+    def draw_blank_prompt_tile_rects(self):
         """Draws blank tile Rect objects to the screen"""
+
         index = 0
         for i in range(6):
             for j in range(5):
@@ -121,7 +249,7 @@ class GameBoard:
                 if index == 26:
                     return
 
-    def draw_rects(self):
+    def draw_game_panel(self):
         """Draws information and user button rectangles to the screen."""
         pygame.draw.rect(self.screen, COLORS['grey'], self.player_score_rect, border_radius=15)
         pygame.draw.rect(self.screen, COLORS['grey'], self.cpu_score_rect, border_radius=15)
@@ -134,24 +262,34 @@ class GameBoard:
         pygame.draw.rect(self.screen, COLORS['dark_grey'], self.cpu_move_rect, border_radius=15)
         pygame.draw.rect(self.screen, COLORS['dark_grey'], self.player_move_rect, border_radius=15)
 
-    def print_text_one_rect(self, text, rect, font):
-        """Prints text in one rectangle"""
-        text = font.render(text, True, COLORS['black'])
-        text_rect = text.get_rect(center=rect.center)
-        self.screen.blit(text, text_rect)
+        self.print_text_one_rect(f"YOU: {self.player_score}", self.player_score_rect, self.tile_font, "black")
+        self.print_text_one_rect(f"CPU: {self.cpu_score}", self.cpu_score_rect, self.tile_font, "black")
+        self.print_text_one_rect("SUBMIT WORD", self.submit_rect, self.tile_font, "black")
+        self.print_text_one_rect("Reset Rack", self.reset_rack_rect, self.tile_font, "black")
+        self.print_text_one_rect("Pass Turn", self.pass_turn_rect, self.tile_font, "black")
+        self.print_text_one_rect("END GAME", self.end_game_rect, self.tile_font, "black")
+        self.print_text_one_rect(f"Tiles Remaining: {self.game_tiles.get_tiles_remaining()}", self.tiles_remaining_rect, self.tile_font, "black")
+        self.print_text_one_rect("Exchange All Tiles", self.exchange_tiles_rect, self.tile_font, "black")
+        self.print_text_one_rect(self.cpu_last_move_text, self.cpu_move_rect, pygame.font.Font(None, int(FONT_SIZE * 0.9)), "black")
+        self.print_text_one_rect(self.player_last_move_text, self.player_move_rect, pygame.font.Font(None, int(FONT_SIZE * 0.9)), "black")
 
-    def print_text_all_rects(self, game_tiles):
-        """Prints text for information and user button rectangles on the screen."""
-        self.print_text_one_rect(f"YOU: {self.player_score}", self.player_score_rect, self.tile_font)
-        self.print_text_one_rect(f"CPU: {self.cpu_score}", self.cpu_score_rect, self.tile_font)
-        self.print_text_one_rect("SUBMIT WORD", self.submit_rect, self.tile_font)
-        self.print_text_one_rect("Reset Rack", self.reset_rack_rect, self.tile_font)
-        self.print_text_one_rect("Pass Turn", self.pass_turn_rect, self.tile_font)
-        self.print_text_one_rect("END GAME", self.end_game_rect, self.tile_font)
-        self.print_text_one_rect(f"Tiles Remaining: {game_tiles.get_tiles_remaining()}", self.tiles_remaining_rect, self.tile_font)
-        self.print_text_one_rect("Exchange All Tiles", self.exchange_tiles_rect, self.tile_font)
-        self.print_text_one_rect(self.cpu_last_move_text, self.cpu_move_rect, pygame.font.Font(None, int(FONT_SIZE * 0.9)))
-        self.print_text_one_rect(self.player_last_move_text, self.player_move_rect, pygame.font.Font(None, int(FONT_SIZE * 0.9)))
+    def draw_tile(self, tile, tile_rect):
+        pygame.draw.rect(self.screen, COLORS['yellow'], tile_rect)
+        if tile.isupper():
+            self.print_text_one_rect(tile, tile_rect, self.tile_font, "black")
+            self.print_text_one_rect(str(self.game_tiles.get_tile_points(tile)), tile_rect, self.score_font, "black", center=(tile_rect.right - 8, tile_rect.bottom - 8))
+        else:
+            self.print_text_one_rect(tile.upper(), tile_rect, self.tile_font, "red")
+            self.print_text_one_rect(str(self.game_tiles.get_tile_points(tile)), tile_rect, self.score_font, "red", center=(tile_rect.right - 8, tile_rect.bottom - 8))
+
+    def print_text_one_rect(self, text, rect, font, color, center=None):
+        """Prints text in one rectangle"""
+        text = font.render(text, True, COLORS[color])
+        if center is None:
+            text_rect = text.get_rect(center=rect.center)
+        else:
+            text_rect = text.get_rect(center=center)
+        self.screen.blit(text, text_rect)
 
     def read_sub_word(self, row, col, current_board, letter):
         """Reads a word generated perpendicular to the main word being played. Return the
@@ -162,17 +300,17 @@ class GameBoard:
 
         row_below = row + 1
         letter_multiplier = self.get_letter_bonus(row, col, self.bonus_matrix)
-        letter_value = self.bag.get_tile_points(letter)
+        letter_value = self.game_tiles.get_tile_points(letter)
         score = letter_multiplier * letter_value
 
         while row > 0 and current_board[row - 1][col] != "_":
             sub_word = (current_board[row - 1][col] + sub_word)
-            score += self.bag.get_tile_points(current_board[row - 1][col])
+            score += self.game_tiles.get_tile_points(current_board[row - 1][col])
             row -= 1
 
         while row_below < SQUARES and current_board[row_below][col] != "_":
             sub_word += current_board[row_below][col]
-            score += self.bag.get_tile_points(current_board[row_below][col])
+            score += self.game_tiles.get_tile_points(current_board[row_below][col])
             row_below += 1
 
         if len(sub_word) > 1:
@@ -224,7 +362,7 @@ class GameBoard:
 
         while start_col >= 0 and current_board[row][start_col] != "_":
             word = (current_board[row][start_col] + word)
-            main_word_score += self.bag.get_tile_points(current_board[row][start_col])
+            main_word_score += self.game_tiles.get_tile_points(current_board[row][start_col])
             start_col -= 1
 
         while col < SQUARES + 1:
@@ -241,7 +379,7 @@ class GameBoard:
 
                 word += tiles_moved[current_index][3]
                 letter_multiplier = self.get_letter_bonus(row, col, self.bonus_matrix)
-                letter_score = self.bag.get_tile_points(tiles_moved[current_index][3])
+                letter_score = self.game_tiles.get_tile_points(tiles_moved[current_index][3])
                 main_word_score += (letter_score * letter_multiplier)
                 col += 1
                 current_index += 1
@@ -249,7 +387,7 @@ class GameBoard:
 
             elif col < SQUARES and current_board[row][col] != "_":
                 word += current_board[row][col]
-                main_word_score += self.bag.get_tile_points(current_board[row][col])
+                main_word_score += self.game_tiles.get_tile_points(current_board[row][col])
                 col += 1
 
             elif current_index == len(tiles_moved):
@@ -288,7 +426,7 @@ class GameBoard:
                 return True
         return False
 
-    def check_valid_move(self, tiles_moved):
+    def validate_player_move(self, tiles_moved):
         """Checks if given move is valid. Returns true if it is and false otherwise."""
 
         # First move should intersect "S" square
@@ -340,7 +478,7 @@ class GameBoard:
         self.player_last_move_text = f"You: {word.lower()} for {move_score}!"
         return True
 
-    def update_active_tiles(self, row, col):
+    def update_active_board_locations(self, row, col):
         """Updates active board locations."""
         indices_to_update = [(row, col), (row, col - 1), (row - 1, col), (row, col + 1), (row + 1, col)]
         for index in indices_to_update:
