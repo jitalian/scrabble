@@ -17,5 +17,5 @@ the computer is limited to just one blank tile at a time.<br>
 button just relocates all of your tiles back to your rack in the same order they started in.
 
 End of Game:<br>
--The game ends as soon as you and the computer both pass 2 times in a row player runs out of tiles.<br>
+-The game ends as soon as you and the computer both pass 2 times in a row or run out of tiles.<br>
 -There is no score adjustment for either player based on the remaining tiles in the other's rack.
